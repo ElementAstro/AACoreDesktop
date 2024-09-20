@@ -1,59 +1,54 @@
-#ifndef CONFIGMANAGEMENTWIDGET_H
-#define CONFIGMANAGEMENTWIDGET_H
+#ifndef CONFIGWIDGET_H
+#define CONFIGWIDGET_H
 
-#include <QLabel>
-#include <QLineEdit>
-#include <QListWidget>
-#include <QPushButton>
-#include <QTimer>
-#include <QWidget>
 #include "T_BasePage.h"
+
+#include <QFileDialog>
+#include <QHBoxLayout>
+#include <QStandardItemModel>
+#include <QStringListModel>
+#include <QVBoxLayout>
+#include <QWidget>
+
+#include "ElaListView.h"
+#include "ElaPushButton.h"
+#include "ElaTableView.h"
+
+
+#include "Config/GlobalConfig.h"
 
 class T_ConfigPanel : public T_BasePage {
     Q_OBJECT
 
-public:
-    explicit T_ConfigPanel(QWidget *parent = nullptr);
-
-private:
-    // UI Elements
-    QListWidget *storeListWidget;
-    QLineEdit *keyLineEdit;
-    QLineEdit *valueLineEdit;
-    QLineEdit *searchLineEdit;
-    QPushButton *addButton;
-    QPushButton *deleteButton;
-    QPushButton *resetButton;
-    QPushButton *subscribeButton;
-    QPushButton *unsubscribeButton;
-    QPushButton *importButton;
-    QPushButton *exportButton;
-    QPushButton *batchUpdateButton;
-    QPushButton *saveTimerButton;
-    QLabel *statusLabel;
-    QTimer *saveTimer;
-
-    // UI Setup Methods
-    void setupUI();
-    void connectSignals();
-    void loadStores();
-    void refreshStoreList();
+        public : T_ConfigPanel(QWidget *parent = nullptr);
+    ~T_ConfigPanel() override = default;
 
 private slots:
-    void addOrUpdateStore();
-    void deleteStore();
-    void resetStore();
-    void subscribeToStore();
-    void unsubscribeFromStore();
-    void importConfig();
-    void exportConfig();
-    void onStoreSelectionChanged();
-    void searchStores();
-    void batchUpdate();
-    void toggleAutoSave();
+    void loadStores();
+    void onStoreSelected();
+    void onSaveButtonClicked();
+    void onResetStoreClicked();
+    void onImportConfig();
+    void onExportConfig();
+    void subscribeToCurrentStore();
 
-    // Utility Methods
-    void autoSave();
+private:
+    void loadStoreData(const QString &storeName);
+    void updateState(const QString &storeName, const QString &key,
+                     const QVariant &value);
+
+    ElaListView *m_storeListView;
+    ElaTableView *m_keyValueTableView;
+    ElaPushButton *m_saveButton;
+    ElaPushButton *m_resetButton;
+    ElaPushButton *m_subscribeButton;
+    ElaPushButton *m_importButton;
+    ElaPushButton *m_exportButton;
+
+    QStringListModel *m_storeListModel;
+    QStandardItemModel *m_keyValueModel;
+
+    QString m_currentStore;
 };
 
-#endif  // CONFIGMANAGEMENTWIDGET_H
+#endif  // CONFIGWIDGET_H

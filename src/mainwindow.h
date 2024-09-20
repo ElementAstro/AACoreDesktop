@@ -26,6 +26,8 @@ class T_SoftwarePage;
 class T_ProcessPage;
 class T_SystemInfoPage;
 
+class T_LogPanelPage;
+
 class T_Navigation;
 class T_Popup;
 class T_Card;
@@ -59,6 +61,7 @@ private:
     T_SoftwarePage *_softwarePage{nullptr};
     T_ProcessPage *_processPage{nullptr};
     T_SystemInfoPage *_systemInfoPage{nullptr};
+    T_LogPanelPage *_logPanelPage{nullptr};
     QString _cameraKey{""};
     QString _elaDxgiKey{""};
     QString _aboutKey{""};

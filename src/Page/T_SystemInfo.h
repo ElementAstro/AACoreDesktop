@@ -1,11 +1,15 @@
 #ifndef PERFORMANCEPAGE_H
 #define PERFORMANCEPAGE_H
 
+#include "T_BasePage.h"
+
 #include <QTimer>
 #include <QWidget>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
 
+class ElaText;
+class ElaTabWidget;
 
 class T_SystemInfoPage : public QWidget {
     Q_OBJECT
@@ -14,6 +18,8 @@ public:
     ~T_SystemInfoPage();
 
 private:
+    ElaTabWidget *tabWidget;
+
     // 各个图表相关成员
     QChartView *cpuChartView;
     QChartView *memoryChartView;
@@ -23,6 +29,11 @@ private:
     QLineSeries *memorySeries;
     QLineSeries *networkUpSeries;
     QLineSeries *networkDownSeries;
+
+    ElaText *cpuUsageLabel;
+    ElaText *memoryUsageLabel;
+    ElaText *networkUpLabel;
+    ElaText *networkDownLabel;
 
     QTimer *timer;
     int timeIndex;

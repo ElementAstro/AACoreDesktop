@@ -1,8 +1,4 @@
 #include "GlobalConfig.h"
-#include <QDebug>
-#include <QDir>
-#include <QFile>
-#include <QJsonDocument>
 
 GlobalConfig &GlobalConfig::getInstance() {
     static GlobalConfig instance;
@@ -16,7 +12,7 @@ GlobalConfig::GlobalConfig() : QObject(nullptr) {
 
 GlobalConfig::~GlobalConfig() { saveConfig(); }
 
-void GlobalConfig::loadConfig() {
+void GlobalConfig::loadConfig() noexcept {
     QFile file(m_configPath);
     if (file.open(QIODevice::ReadOnly)) {
         QByteArray saveData = file.readAll();
@@ -25,7 +21,7 @@ void GlobalConfig::loadConfig() {
     }
 }
 
-void GlobalConfig::saveConfig() const {
+void GlobalConfig::saveConfig() const noexcept {
     QDir().mkpath(QFileInfo(m_configPath).path());
     QFile file(m_configPath);
     if (file.open(QIODevice::WriteOnly)) {
@@ -34,48 +30,51 @@ void GlobalConfig::saveConfig() const {
     }
 }
 
-QVariant GlobalConfig::getState(const QString &storeName, const QString &key) {
-    if (!m_stores.contains(storeName)) {
+std::optional<QVariant> GlobalConfig::getState(QStringView storeName,
+                                               QStringView key) const {
+    if (!m_stores.contains(storeName.toString())) {
         qWarning() << "Store" << storeName << "does not exist!";
-        return QVariant();
+        return std::nullopt;
     }
 
-    QJsonObject storeObject = m_stores[storeName].toObject();
-    return storeObject[key].toVariant();
+    QJsonObject storeObject = m_stores[storeName.toString()].toObject();
+    return storeObject[key.toString()].toVariant();
 }
 
-void GlobalConfig::resetStore(const QString &storeName) {
-    if (!m_stores.contains(storeName)) {
+void GlobalConfig::resetStore(QStringView storeName) noexcept {
+    if (!m_stores.contains(storeName.toString())) {
         qWarning() << "Store" << storeName << "does not exist!";
         return;
     }
 
-    m_stores.remove(storeName);
+    m_stores.remove(storeName.toString());
     saveConfig();
-    emit storeReset(storeName);
+    emit storeReset(storeName.toString());
 }
 
-bool GlobalConfig::hasStore(const QString &storeName) const {
-    return m_stores.contains(storeName);
+bool GlobalConfig::hasStore(QStringView storeName) const noexcept {
+    return m_stores.contains(storeName.toString());
 }
 
-QStringList GlobalConfig::getStoreNames() const { return m_stores.keys(); }
+QStringList GlobalConfig::getStoreNames() const noexcept {
+    return m_stores.keys();
+}
 
-void GlobalConfig::clearAllStores() {
+void GlobalConfig::clearAllStores() noexcept {
     m_stores = QJsonObject();
     saveConfig();
     emit allStoresCleared();
 }
 
-void GlobalConfig::subscribeToStore(
-    const QString &storeName, std::function<void(const QString &)> callback) {
-    m_subscribers[storeName][this] = callback;
+void GlobalConfig::subscribeToStore(QStringView storeName,
+                                    const std::shared_ptr<Callback> &callback) {
+    m_subscribers[storeName.toString()][this] = callback;
 }
 
-void GlobalConfig::unsubscribeFromStore(const QString &storeName,
-                                        void *subscriber) {
-    if (m_subscribers.count(storeName) > 0) {
-        m_subscribers[storeName].erase(subscriber);
+void GlobalConfig::unsubscribeFromStore(QStringView storeName,
+                                        void *subscriber) noexcept {
+    if (m_subscribers.count(storeName.toString()) > 0) {
+        m_subscribers[storeName.toString()].erase(subscriber);
     }
 }
 

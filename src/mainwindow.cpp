@@ -15,6 +15,7 @@
 #include "ElaGraphicsView.h"
 #include "ElaStatusBar.h"
 #include "ElaText.h"
+
 #include "Page/T_Camera.h"
 #include "Page/T_ConfigPanel.h"
 #include "Page/T_DeviceConnection.h"
@@ -22,6 +23,7 @@
 #include "Page/T_Focuser.h"
 #include "Page/T_Guider.h"
 #include "Page/T_Home.h"
+#include "Page/T_LogPanel.h"
 #include "Page/T_Process.hpp"
 #include "Page/T_SerialConfig.h"
 #include "Page/T_SerialDebug.h"
@@ -30,6 +32,7 @@
 #include "Page/T_SystemInfo.h"
 #include "Page/T_TargetSearch.h"
 #include "Page/T_Telescope.h"
+
 #include "T_About.h"
 
 MainWindow::MainWindow(QWidget *parent) : ElaWindow(parent) {
@@ -102,6 +105,7 @@ void MainWindow::initContent() {
     _softwarePage = new T_SoftwarePage(this);
     _processPage = new T_ProcessPage(this);
     _systemInfoPage = new T_SystemInfoPage(this);
+    _logPanelPage = new T_LogPanelPage(this);
 
     // GraphicsView
     ElaGraphicsScene *scene = new ElaGraphicsScene(this);
@@ -151,6 +155,8 @@ void MainWindow::initContent() {
     addPageNode("Process", _processPage, systemKey, ElaIconType::BarsProgress);
     addPageNode("SystemInfo", _systemInfoPage, systemKey, ElaIconType::List);
     addPageNode("Config", _configPanel, ElaIconType::GearComplex);
+
+    addPageNode("Log", _logPanelPage, ElaIconType::List);
 
     addFooterNode("About", nullptr, _aboutKey, 0, ElaIconType::User);
     auto *aboutPage = new T_About();

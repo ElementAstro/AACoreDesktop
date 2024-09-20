@@ -1,12 +1,19 @@
 #ifndef GLOBALCONFIG_H
 #define GLOBALCONFIG_H
 
+#include <QDebug>
+#include <QDir>
+#include <QFile>
+#include <QJsonDocument>
 #include <QJsonObject>
 #include <QMap>
 #include <QObject>
 #include <QVariant>
 #include <functional>
+#include <memory>
+#include <optional>
 #include <unordered_map>
+
 
 class GlobalConfig : public QObject {
     Q_OBJECT
@@ -18,22 +25,25 @@ public:
     void defineStore(const QString &storeName, const std::function<T()> &setup);
 
     template <typename T>
-    T useStore(const QString &storeName);
+    std::optional<T> useStore(QStringView storeName) const;
 
     template <typename T>
-    void setState(const QString &storeName, const QString &key, const T &value);
+    void setState(QStringView storeName, QStringView key, const T &value);
 
-    QVariant getState(const QString &storeName, const QString &key);
+    std::optional<QVariant> getState(QStringView storeName,
+                                     QStringView key) const;
 
-    void resetStore(const QString &storeName);
+    void resetStore(QStringView storeName) noexcept;
 
     // 新增功能
-    bool hasStore(const QString &storeName) const;
-    QStringList getStoreNames() const;
-    void clearAllStores();
-    void subscribeToStore(const QString &storeName,
-                          std::function<void(const QString &)> callback);
-    void unsubscribeFromStore(const QString &storeName, void *subscriber);
+    bool hasStore(QStringView storeName) const noexcept;
+    QStringList getStoreNames() const noexcept;
+    void clearAllStores() noexcept;
+
+    using Callback = std::function<void(const QString &)>;
+    void subscribeToStore(QStringView storeName,
+                          const std::shared_ptr<Callback> &callback);
+    void unsubscribeFromStore(QStringView storeName, void *subscriber) noexcept;
     void importConfig(const QString &filePath);
     void exportConfig(const QString &filePath) const;
 
@@ -48,13 +58,12 @@ private:
     GlobalConfig(const GlobalConfig &) = delete;
     GlobalConfig &operator=(const GlobalConfig &) = delete;
 
-    void loadConfig();
-    void saveConfig() const;
+    void loadConfig() noexcept;
+    void saveConfig() const noexcept;
 
     QJsonObject m_stores;
-    std::unordered_map<
-        QString,
-        std::unordered_map<void *, std::function<void(const QString &)>>>
+    std::unordered_map<QString,
+                       std::unordered_map<void *, std::shared_ptr<Callback>>>
         m_subscribers;
     QString m_configPath;
 };
@@ -80,13 +89,13 @@ void GlobalConfig::defineStore(const QString &storeName,
 }
 
 template <typename T>
-T GlobalConfig::useStore(const QString &storeName) {
-    if (!m_stores.contains(storeName)) {
+std::optional<T> GlobalConfig::useStore(QStringView storeName) const {
+    if (!m_stores.contains(storeName.toString())) {
         qWarning() << "Store" << storeName << "does not exist!";
-        return T();
+        return std::nullopt;
     }
 
-    QJsonObject storeObject = m_stores[storeName].toObject();
+    QJsonObject storeObject = m_stores[storeName.toString()].toObject();
     QVariantMap variantMap = storeObject.toVariantMap();
     T result;
     for (auto it = variantMap.begin(); it != variantMap.end(); ++it) {
@@ -96,23 +105,24 @@ T GlobalConfig::useStore(const QString &storeName) {
 }
 
 template <typename T>
-void GlobalConfig::setState(const QString &storeName, const QString &key,
+void GlobalConfig::setState(QStringView storeName, QStringView key,
                             const T &value) {
-    if (!m_stores.contains(storeName)) {
+    if (!m_stores.contains(storeName.toString())) {
         qWarning() << "Store" << storeName << "does not exist!";
         return;
     }
 
-    QJsonObject storeObject = m_stores[storeName].toObject();
-    storeObject[key] = QJsonValue::fromVariant(QVariant::fromValue(value));
-    m_stores[storeName] = storeObject;
+    QJsonObject storeObject = m_stores[storeName.toString()].toObject();
+    storeObject[key.toString()] =
+        QJsonValue::fromVariant(QVariant::fromValue(value));
+    m_stores[storeName.toString()] = storeObject;
     saveConfig();
-    emit stateChanged(storeName, key);
+    emit stateChanged(storeName.toString(), key.toString());
 
     // 通知订阅者
-    if (m_subscribers.count(storeName) > 0) {
-        for (const auto &callback : m_subscribers[storeName]) {
-            callback.second(key);
+    if (m_subscribers.count(storeName.toString()) > 0) {
+        for (const auto &callback : m_subscribers[storeName.toString()]) {
+            (*callback.second)(key.toString());
         }
     }
 }
