@@ -27,6 +27,8 @@ public:
     // 终止进程
     bool killProcess(int processID);
 
+    bool setProcessPriority(int processID, int priority);
+
 private:
 #ifdef _WIN32
     QString getWindowsProcessInfo(DWORD processID);

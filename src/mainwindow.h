@@ -20,6 +20,11 @@ class T_SimpleSequencerPage;
 class T_TargetSearchPage;
 
 class T_SerialConfig;
+class T_SerialDebugPage;
+
+class T_SoftwarePage;
+class T_ProcessPage;
+class T_SystemInfoPage;
 
 class T_Navigation;
 class T_Popup;
@@ -50,6 +55,10 @@ private:
     T_TargetSearchPage *_targetSearchPage{nullptr};
     T_ConfigPanel *_configPanel{nullptr};
     T_SerialConfig *_serialConfigPage{nullptr};
+    T_SerialDebugPage *_serialDebugPage{nullptr};
+    T_SoftwarePage *_softwarePage{nullptr};
+    T_ProcessPage *_processPage{nullptr};
+    T_SystemInfoPage *_systemInfoPage{nullptr};
     QString _cameraKey{""};
     QString _elaDxgiKey{""};
     QString _aboutKey{""};

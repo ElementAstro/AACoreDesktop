@@ -1,10 +1,14 @@
 #include "T_SerialConfig.h"
 #include "Connection/SerialScanner.h"
 
+#include <QFile>
 #include <QFormLayout>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QMessageBox>
 #include <QPixmap>
 #include <QThread>
@@ -51,7 +55,7 @@ T_SerialConfig::T_SerialConfig(QWidget *parent) : T_BasePage(parent) {
     auto *dcGroupBox = new QGroupBox("DC Channels", this);
     auto *dcLayout = new QFormLayout();
 
-    QStringList dcLabels = {"DC1", "DC2", "DC3", "DC4", "DC5", "DC6", "DC7"};
+    dcLabels = {"DC1", "DC2", "DC3", "DC4", "DC5", "DC6", "DC7"};
     QStringList dcDescriptions = {"主镜供电",   "主相机供电", "赤道仪供电",
                                   "滤镜轮供电", "电调供电",   "N/C",
                                   "N/C"};
@@ -59,6 +63,8 @@ T_SerialConfig::T_SerialConfig(QWidget *parent) : T_BasePage(parent) {
     for (int i = 0; i < dcLabels.size(); ++i) {
         auto *lineEdit = new ElaLineEdit(this);
         auto *checkBox = new ElaCheckBox(dcDescriptions[i], this);
+        dcLineEditList.append(lineEdit);
+        dcCheckBoxList.append(checkBox);
         auto *widget = new QWidget(this);
         auto *hLayout = new QHBoxLayout(widget);
         hLayout->addWidget(lineEdit);
@@ -74,13 +80,15 @@ T_SerialConfig::T_SerialConfig(QWidget *parent) : T_BasePage(parent) {
     auto *pwmGroupBox = new QGroupBox("PWM Channels", this);
     auto *pwmLayout = new QFormLayout();
 
-    QStringList pwmLabels = {"PWM1", "PWM2", "PWM3"};
+    pwmLabels = {"PWM1", "PWM2", "PWM3"};
     QStringList pwmDescriptions = {"主镜自动应加热", "平场板亮度",
                                    "主机自动应加热"};
 
     for (int i = 0; i < pwmLabels.size(); ++i) {
         auto *lineEdit = new ElaLineEdit(this);
         auto *checkBox = new ElaCheckBox(pwmDescriptions[i], this);
+        pwmLineEditList.append(lineEdit);
+        pwmCheckBoxList.append(checkBox);
         auto *widget = new QWidget(this);
         auto *hLayout = new QHBoxLayout(widget);
         hLayout->addWidget(lineEdit);
@@ -127,6 +135,8 @@ T_SerialConfig::T_SerialConfig(QWidget *parent) : T_BasePage(parent) {
     centerLayout->addLayout(mainLayout);
     centerLayout->setContentsMargins(0, 0, 0, 0);
     addCentralWidget(centralWidget, true, true, 0);
+
+    loadConfig();
 }
 
 T_SerialConfig::~T_SerialConfig() {}
@@ -145,4 +155,88 @@ void T_SerialConfig::onComPortChanged(int index) {}
 void T_SerialConfig::updateComPorts(const QStringList &ports) {
     comComboBox->clear();
     comComboBox->addItems(ports);
+}
+
+void T_SerialConfig::saveConfig() {
+    QJsonObject config;
+
+    // 保存当前选中的串口
+    config["comPort"] = comComboBox->currentText();
+
+    // 保存DC通道配置信息
+    QJsonArray dcArray;
+    for (int i = 0; i < dcLineEditList.size(); ++i) {
+        QJsonObject dcItem;
+        dcItem["label"] = dcLabels[i];  // Label like "DC1", "DC2", etc.
+        dcItem["value"] = dcLineEditList[i]->text();  // Value from lineEdit
+        dcItem["enabled"] =
+            dcCheckBoxList[i]->isChecked();  // Enabled state from checkbox
+        dcArray.append(dcItem);
+    }
+    config["dcChannels"] = dcArray;
+
+    // 保存PWM通道配置信息
+    QJsonArray pwmArray;
+    for (int i = 0; i < pwmLineEditList.size(); ++i) {
+        QJsonObject pwmItem;
+        pwmItem["label"] = pwmLabels[i];  // Label like "PWM1", "PWM2", etc.
+        pwmItem["value"] = pwmLineEditList[i]->text();  // Value from lineEdit
+        pwmItem["enabled"] =
+            pwmCheckBoxList[i]->isChecked();  // Enabled state from checkbox
+        pwmArray.append(pwmItem);
+    }
+    config["pwmChannels"] = pwmArray;
+
+    // 将JSON对象写入文件
+    QFile file("config.json");
+    if (file.open(QIODevice::WriteOnly)) {
+        file.write(QJsonDocument(config).toJson());
+        file.close();
+        QMessageBox::information(this, "Save", "Configuration has been saved.");
+    } else {
+        QMessageBox::warning(this, "Save Error",
+                             "Failed to save configuration.");
+    }
+}
+
+void T_SerialConfig::loadConfig() {
+    QFile file("config.json");
+    if (!file.exists()) {
+        return;  // 文件不存在时直接返回
+    }
+
+    if (file.open(QIODevice::ReadOnly)) {
+        QByteArray data = file.readAll();
+        file.close();
+
+        QJsonDocument doc = QJsonDocument::fromJson(data);
+        QJsonObject config = doc.object();
+
+        // 加载串口信息
+        QString comPort = config["comPort"].toString();
+        int comIndex = comComboBox->findText(comPort);
+        if (comIndex != -1) {
+            comComboBox->setCurrentIndex(comIndex);
+        }
+
+        // 加载DC通道配置信息
+        QJsonArray dcArray = config["dcChannels"].toArray();
+        for (int i = 0; i < dcArray.size() && i < dcLineEditList.size(); ++i) {
+            QJsonObject dcItem = dcArray[i].toObject();
+            dcLineEditList[i]->setText(dcItem["value"].toString());
+            dcCheckBoxList[i]->setChecked(dcItem["enabled"].toBool());
+        }
+
+        // 加载PWM通道配置信息
+        QJsonArray pwmArray = config["pwmChannels"].toArray();
+        for (int i = 0; i < pwmArray.size() && i < pwmLineEditList.size();
+             ++i) {
+            QJsonObject pwmItem = pwmArray[i].toObject();
+            pwmLineEditList[i]->setText(pwmItem["value"].toString());
+            pwmCheckBoxList[i]->setChecked(pwmItem["enabled"].toBool());
+        }
+    } else {
+        QMessageBox::warning(this, "Load Error",
+                             "Failed to load configuration.");
+    }
 }

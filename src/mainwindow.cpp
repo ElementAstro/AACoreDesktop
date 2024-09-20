@@ -22,8 +22,12 @@
 #include "Page/T_Focuser.h"
 #include "Page/T_Guider.h"
 #include "Page/T_Home.h"
+#include "Page/T_Process.hpp"
 #include "Page/T_SerialConfig.h"
+#include "Page/T_SerialDebug.h"
 #include "Page/T_SimpleSequencer.h"
+#include "Page/T_Software.hpp"
+#include "Page/T_SystemInfo.h"
 #include "Page/T_TargetSearch.h"
 #include "Page/T_Telescope.h"
 #include "T_About.h"
@@ -94,6 +98,10 @@ void MainWindow::initContent() {
     _targetSearchPage = new T_TargetSearchPage(this);
     _configPanel = new T_ConfigPanel(this);
     _serialConfigPage = new T_SerialConfig(this);
+    _serialDebugPage = new T_SerialDebugPage(this);
+    _softwarePage = new T_SoftwarePage(this);
+    _processPage = new T_ProcessPage(this);
+    _systemInfoPage = new T_SystemInfoPage(this);
 
     // GraphicsView
     ElaGraphicsScene *scene = new ElaGraphicsScene(this);
@@ -135,7 +143,13 @@ void MainWindow::initContent() {
                 ElaIconType::MagnifyingGlassPlus);
 
     addPageNode("SerialConfig", _serialConfigPage, ElaIconType::GearComplex);
+    addPageNode("SerialDebug", _serialDebugPage, ElaIconType::Plug);
 
+    QString systemKey;
+    addExpanderNode("System", systemKey, ElaIconType::SolarSystem);
+    addPageNode("Software", _softwarePage, systemKey, ElaIconType::Grid2);
+    addPageNode("Process", _processPage, systemKey, ElaIconType::BarsProgress);
+    addPageNode("SystemInfo", _systemInfoPage, systemKey, ElaIconType::List);
     addPageNode("Config", _configPanel, ElaIconType::GearComplex);
 
     addFooterNode("About", nullptr, _aboutKey, 0, ElaIconType::User);

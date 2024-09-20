@@ -128,3 +128,17 @@ bool ProcessManager::killProcess(int processID) {
     return kill(processID, SIGKILL) == 0;
 #endif
 }
+
+bool ProcessManager::setProcessPriority(int processID, int priority) {
+#ifdef _WIN32
+    HANDLE hProcess = OpenProcess(PROCESS_SET_INFORMATION, FALSE, processID);
+    if (hProcess) {
+        bool result = SetPriorityClass(hProcess, priority);
+        CloseHandle(hProcess);
+        return result;
+    }
+    return false;
+#else
+    return setpriority(PRIO_PROCESS, processID, priority) == 0;
+#endif
+}
