@@ -10,19 +10,19 @@ class QGridLayout;
 class QGroupBox;
 class ElaToggleSwitch;
 class T_FilterWheelPage : public T_BasePage {
-  Q_OBJECT
+    Q_OBJECT
 public:
-  explicit T_FilterWheelPage(QWidget *parent = nullptr);
+    explicit T_FilterWheelPage(QWidget *parent = nullptr);
 
 protected:
-  QHBoxLayout *createTopLayout();
-  QWidget *createInfoTab();
-  QWidget *createControlTab();
-  QWidget *createSettingsTab();
-  QWidget* createFiltersTab();
-  QGroupBox *createInfoGroup(const QString &title);
+    QHBoxLayout *createTopLayout();
+    QWidget *createInfoTab();
+    QWidget *createControlTab();
+    QWidget *createSettingsTab();
+    QWidget *createFiltersTab();
+    QGroupBox *createInfoGroup(const QString &title);
 
-  ElaToggleSwitch *_toggleSwitch{nullptr};
+    ElaToggleSwitch *_toggleSwitch{nullptr};
 };
 
-#endif // T_FILTERWHEELPAGE_H
+#endif  // T_FILTERWHEELPAGE_H

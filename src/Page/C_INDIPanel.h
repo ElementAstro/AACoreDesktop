@@ -2,21 +2,21 @@
 #ifndef INDIDEVICEPANEL_H
 #define INDIDEVICEPANEL_H
 
-#include <QWidget>
-#include <QTabWidget>
+#include <QCheckBox>
 #include <QJsonObject>
+#include <QLabel>
+#include <QLineEdit>
 #include <QMap>
 #include <QPlainTextEdit>
-#include <QLabel>
 #include <QPushButton>
-#include <QLineEdit>
 #include <QSlider>
-#include <QCheckBox>
+#include <QTabWidget>
+#include <QWidget>
+
 
 class ElaPlainTextEdit;
 
-class C_INDIPanel : public QWidget
-{
+class C_INDIPanel : public QWidget {
     Q_OBJECT
 
 public:
@@ -26,12 +26,12 @@ private:
     void setupUI();
     void loadConfiguration(const QString &filename);
     void createTabs(const QJsonObject &config);
-    QWidget* createControlWidget(const QJsonObject &control);
+    QWidget *createControlWidget(const QJsonObject &control);
     void applyStyles();
 
     QTabWidget *tabWidget;
     ElaPlainTextEdit *logTextEdit;
-    QMap<QString, QWidget*> controlWidgets;
+    QMap<QString, QWidget *> controlWidgets;
 
     void log(const QString &message);
 

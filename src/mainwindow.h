@@ -19,16 +19,17 @@ class T_SimpleSequencerPage;
 
 class T_TargetSearchPage;
 
+class T_SerialConfig;
+
 class T_Navigation;
 class T_Popup;
 class T_Card;
 class T_View;
-class MainWindow : public ElaWindow
-{
+class MainWindow : public ElaWindow {
     Q_OBJECT
 
 public:
-    MainWindow(QWidget* parent = nullptr);
+    MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
     Q_SLOT void onCloseButtonClicked();
 
@@ -37,9 +38,9 @@ public:
     void initContent();
 
 private:
-    T_Home* _homePage{nullptr};
-    T_Icon* _iconPage{nullptr};
-    T_DeviceConnection* _deviceConnectionPage{nullptr};
+    T_Home *_homePage{nullptr};
+    T_Icon *_iconPage{nullptr};
+    T_DeviceConnection *_deviceConnectionPage{nullptr};
     T_CameraPage *_cameraPage{nullptr};
     T_TelescopePage *_telescopePage{nullptr};
     T_FocuserPage *_focuserPage{nullptr};
@@ -48,9 +49,10 @@ private:
     T_SimpleSequencerPage *_simpleSequencerPage{nullptr};
     T_TargetSearchPage *_targetSearchPage{nullptr};
     T_ConfigPanel *_configPanel{nullptr};
+    T_SerialConfig *_serialConfigPage{nullptr};
     QString _cameraKey{""};
     QString _elaDxgiKey{""};
     QString _aboutKey{""};
     QString _settingKey{""};
 };
-#endif // MAINWINDOW_H
+#endif  // MAINWINDOW_H

@@ -3,8 +3,7 @@
 
 #include "ElaScrollPage.h"
 class ElaMenu;
-class T_Home : public ElaScrollPage
-{
+class T_Home : public ElaScrollPage {
     Q_OBJECT
 public:
     explicit T_Home(QWidget* parent = nullptr);
@@ -23,4 +22,4 @@ private:
     ElaMenu* _homeMenu{nullptr};
 };
 
-#endif // T_HOME_H
+#endif  // T_HOME_H

@@ -6,8 +6,7 @@
 class QVBoxLayout;
 class ElaProgressBar;
 
-class T_About : public ElaWidget
-{
+class T_About : public ElaWidget {
     Q_OBJECT
 
 public:
@@ -20,11 +19,12 @@ private slots:
     void updateProgressBar();
 
 private:
-    void addInfoText(QVBoxLayout* layout, const QString& label, const QString& value);
+    void addInfoText(QVBoxLayout* layout, const QString& label,
+                     const QString& value);
 
     ElaProgressBar* m_progressBar;
     QTimer* m_timer;
     int m_progressValue;
 };
 
-#endif // T_ABOUT_H
+#endif  // T_ABOUT_H

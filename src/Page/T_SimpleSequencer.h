@@ -21,7 +21,6 @@
 #include <QValueAxis>
 #include <QWidget>
 
-
 #include "ElaComboBox.h"
 #include "ElaPushButton.h"
 #include "ElaSlider.h"
@@ -30,53 +29,52 @@
 #include "ElaToggleSwitch.h"
 #include "T_BasePage.h"
 
-
 class T_SimpleSequencerPage : public T_BasePage {
-  Q_OBJECT
+    Q_OBJECT
 
 public:
-  explicit T_SimpleSequencerPage(QWidget *parent = nullptr);
+    explicit T_SimpleSequencerPage(QWidget *parent = nullptr);
 
 private:
-  void setupUI();
-  void createTopSection();
-  void createMiddleSection();
-  void createBottomSection();
-  void createChart();
-  void createControlButtons();
-  void applyStyles();
+    void setupUI();
+    void createTopSection();
+    void createMiddleSection();
+    void createBottomSection();
+    void createChart();
+    void createControlButtons();
+    void applyStyles();
 
-  QVBoxLayout *mainLayout;
-  QWidget *topWidget;
-  QWidget *middleWidget;
-  QWidget *bottomWidget;
+    QVBoxLayout *mainLayout;
+    QWidget *topWidget;
+    QWidget *middleWidget;
+    QWidget *bottomWidget;
 
-  // Top section widgets
-  ElaToggleSwitch *coolCameraSwitch;
-  ElaToggleSwitch *unparkMountSwitch;
-  ElaToggleSwitch *meridianFlipSwitch;
-  ElaToggleSwitch *warmCameraSwitch;
-  ElaToggleSwitch *parkMountSwitch;
+    // Top section widgets
+    ElaToggleSwitch *coolCameraSwitch;
+    ElaToggleSwitch *unparkMountSwitch;
+    ElaToggleSwitch *meridianFlipSwitch;
+    ElaToggleSwitch *warmCameraSwitch;
+    ElaToggleSwitch *parkMountSwitch;
 
-  // Middle section widgets
-  ElaSpinBox *delayStartSpinBox;
-  ElaComboBox *sequenceModeCombo;
-  QLineEdit *estimatedDownloadTimeEdit;
-  QDateTimeEdit *estimatedFinishTimeEdit;
-  QDateTimeEdit *estFinishTimeThisTargetEdit;
+    // Middle section widgets
+    ElaSpinBox *delayStartSpinBox;
+    ElaComboBox *sequenceModeCombo;
+    QLineEdit *estimatedDownloadTimeEdit;
+    QDateTimeEdit *estimatedFinishTimeEdit;
+    QDateTimeEdit *estFinishTimeThisTargetEdit;
 
-  // Bottom section widgets
-  QTableWidget *targetTable;
-  QChartView *chartView;
+    // Bottom section widgets
+    QTableWidget *targetTable;
+    QChartView *chartView;
 
-  // Control buttons
-  ElaPushButton *backButton;
-  ElaPushButton *addButton;
-  ElaPushButton *deleteButton;
-  ElaPushButton *resetButton;
-  ElaPushButton *moveUpButton;
-  ElaPushButton *moveDownButton;
-  ElaPushButton *startButton;
+    // Control buttons
+    ElaPushButton *backButton;
+    ElaPushButton *addButton;
+    ElaPushButton *deleteButton;
+    ElaPushButton *resetButton;
+    ElaPushButton *moveUpButton;
+    ElaPushButton *moveDownButton;
+    ElaPushButton *startButton;
 };
 
-#endif // TARGETSETWIDGET_H
+#endif  // TARGETSETWIDGET_H

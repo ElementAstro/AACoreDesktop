@@ -2,13 +2,13 @@
 #define WEBSOCKETCLIENT_H
 
 #include <QObject>
-#include <QtWebSockets/QWebSocket>
-#include <QUrl>
-#include <QTimer>
 #include <QQueue>
+#include <QTimer>
+#include <QUrl>
+#include <QtWebSockets/QWebSocket>
 
-class WebSocketClient : public QObject
-{
+
+class WebSocketClient : public QObject {
     Q_OBJECT
 
 public:
@@ -54,11 +54,12 @@ private:
     // New members
     QTimer m_reconnectTimer;
     QTimer m_heartbeatTimer;
-    QQueue<QPair<bool, QByteArray>> m_messageQueue; // bool: true for text, false for binary
+    QQueue<QPair<bool, QByteArray>>
+        m_messageQueue;  // bool: true for text, false for binary
     bool m_sslVerificationEnabled;
 
     void scheduleReconnect();
     void clearMessageQueue();
 };
 
-#endif // WEBSOCKETCLIENT_H
+#endif  // WEBSOCKETCLIENT_H

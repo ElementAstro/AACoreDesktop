@@ -14,35 +14,35 @@ class ElaSlider;
 class ElaRadioButton;
 class ElaProgressBar;
 class T_DeviceConnection : public T_BasePage {
-  Q_OBJECT
+    Q_OBJECT
 public:
-  T_DeviceConnection(QWidget *parent = nullptr);
-  ~T_DeviceConnection();
+    T_DeviceConnection(QWidget *parent = nullptr);
+    ~T_DeviceConnection();
 
-  void onSaveButtonClicked();
+    void onSaveButtonClicked();
 
-  void onCloseButtonClicked();
+    void onCloseButtonClicked();
 
-  void onWebManagerButtonClicked();
+    void onWebManagerButtonClicked();
 
-  void onScanButtonClicked();
+    void onScanButtonClicked();
 
-  void onScriptsButtonClicked();
+    void onScriptsButtonClicked();
 
 private:
-  ElaToggleSwitch *_toggleSwitch{nullptr};
-  ElaToggleButton *_toggleButton{nullptr};
-  ElaComboBox *_comboBox{nullptr};
-  ElaMultiSelectComboBox *_multiSelectComboBox{nullptr};
-  ElaMessageButton *_messageButton{nullptr};
-  ElaMessageButton *_infoMessageButton{nullptr};
-  ElaMessageButton *_warningMessageButton{nullptr};
-  ElaMessageButton *_errorMessageButton{nullptr};
-  ElaCheckBox *_checkBox{nullptr};
-  ElaSpinBox *_spinBox{nullptr};
-  ElaSlider *_slider{nullptr};
-  ElaRadioButton *_radioButton{nullptr};
-  ElaProgressBar *_progressBar{nullptr};
+    ElaToggleSwitch *_toggleSwitch{nullptr};
+    ElaToggleButton *_toggleButton{nullptr};
+    ElaComboBox *_comboBox{nullptr};
+    ElaMultiSelectComboBox *_multiSelectComboBox{nullptr};
+    ElaMessageButton *_messageButton{nullptr};
+    ElaMessageButton *_infoMessageButton{nullptr};
+    ElaMessageButton *_warningMessageButton{nullptr};
+    ElaMessageButton *_errorMessageButton{nullptr};
+    ElaCheckBox *_checkBox{nullptr};
+    ElaSpinBox *_spinBox{nullptr};
+    ElaSlider *_slider{nullptr};
+    ElaRadioButton *_radioButton{nullptr};
+    ElaProgressBar *_progressBar{nullptr};
 };
 
-#endif // T_DeviceConnection_H
+#endif  // T_DeviceConnection_H

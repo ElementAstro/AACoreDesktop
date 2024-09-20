@@ -7,17 +7,11 @@
 #include "ElaText.h"
 #include "ElaTheme.h"
 #include "ElaToolButton.h"
-T_BasePage::T_BasePage(QWidget* parent)
-    : ElaScrollPage(parent)
-{
-}
+T_BasePage::T_BasePage(QWidget* parent) : ElaScrollPage(parent) {}
 
-T_BasePage::~T_BasePage()
-{
-}
+T_BasePage::~T_BasePage() {}
 
-QVBoxLayout* T_BasePage::createTopLayout(QString desText)
-{
+QVBoxLayout* T_BasePage::createTopLayout(QString desText) {
     // 顶部元素
     ElaText* subTitleText = new ElaText(this);
     subTitleText->setText("https://github.com/Liniyous/ElaWidgetTools");
@@ -33,7 +27,8 @@ QVBoxLayout* T_BasePage::createTopLayout(QString desText)
     documentationButton->setElaIcon(ElaIconType::FileDoc);
     ElaMenu* documentationMenu = new ElaMenu(this);
     documentationMenu->addElaIconAction(ElaIconType::CardsBlank, "CardsBlank");
-    documentationMenu->addElaIconAction(ElaIconType::EarthAmericas, "EarthAmericas");
+    documentationMenu->addElaIconAction(ElaIconType::EarthAmericas,
+                                        "EarthAmericas");
     documentationButton->setMenu(documentationMenu);
 
     ElaToolButton* sourceButton = new ElaToolButton(this);
@@ -52,7 +47,9 @@ QVBoxLayout* T_BasePage::createTopLayout(QString desText)
     themeButton->setIsTransparent(false);
     themeButton->setElaIcon(ElaIconType::MoonStars);
     connect(themeButton, &ElaToolButton::clicked, this, [=]() {
-        eTheme->setThemeMode(eTheme->getThemeMode() == ElaThemeType::Light ? ElaThemeType::Dark : ElaThemeType::Light);
+        eTheme->setThemeMode(eTheme->getThemeMode() == ElaThemeType::Light
+                                 ? ElaThemeType::Dark
+                                 : ElaThemeType::Light);
     });
 
     QHBoxLayout* buttonLayout = new QHBoxLayout();

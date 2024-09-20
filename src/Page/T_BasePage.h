@@ -4,8 +4,7 @@
 #include <ElaScrollPage.h>
 
 class QVBoxLayout;
-class T_BasePage : public ElaScrollPage
-{
+class T_BasePage : public ElaScrollPage {
     Q_OBJECT
 public:
     explicit T_BasePage(QWidget* parent = nullptr);
@@ -15,4 +14,4 @@ protected:
     QVBoxLayout* createTopLayout(QString desText);
 };
 
-#endif // T_BASEPAGE_H
+#endif  // T_BASEPAGE_H

@@ -13,24 +13,24 @@ class ElaIconButton;
 
 class T_PHD2SetupDialog;
 class T_GuiderPage : public T_BasePage {
-  Q_OBJECT
+    Q_OBJECT
 public:
-  explicit T_GuiderPage(QWidget *parent = nullptr);
+    explicit T_GuiderPage(QWidget *parent = nullptr);
 
 protected:
-  QHBoxLayout *createTopLayout();
-  QWidget *createInfoTab();
-  QWidget *createControlTab();
-  QWidget *createSettingsTab();
-  QGroupBox *createInfoGroup(const QString &title);
-  QChartView *createGuideChart();
-  void onRAColorButtonClicked();
-  void onDecColorButtonClicked();
+    QHBoxLayout *createTopLayout();
+    QWidget *createInfoTab();
+    QWidget *createControlTab();
+    QWidget *createSettingsTab();
+    QGroupBox *createInfoGroup(const QString &title);
+    QChartView *createGuideChart();
+    void onRAColorButtonClicked();
+    void onDecColorButtonClicked();
 
-  ElaToggleSwitch *_toggleSwitch{nullptr};
+    ElaToggleSwitch *_toggleSwitch{nullptr};
 
-  ElaIconButton *_settingButton{nullptr};
-  T_PHD2SetupDialog *_phd2SetupDialog{nullptr};
+    ElaIconButton *_settingButton{nullptr};
+    T_PHD2SetupDialog *_phd2SetupDialog{nullptr};
 };
 
-#endif // T_GUIDERPAGE_H
+#endif  // T_GUIDERPAGE_H

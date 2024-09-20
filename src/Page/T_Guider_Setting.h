@@ -12,33 +12,33 @@ class ElaPushButton;
 class ElaMessageButton;
 
 class T_PHD2SetupDialog : public ElaWidget {
-  Q_OBJECT
+    Q_OBJECT
 
 public:
-  explicit T_PHD2SetupDialog(QWidget *parent = nullptr);
+    explicit T_PHD2SetupDialog(QWidget *parent = nullptr);
 
 private slots:
     void accept();
     void reject();
 
 private:
-  QVBoxLayout* createTopLayout(const QString& description);
-  QLineEdit *phd2PathEdit;
-  QLineEdit *serverUrlEdit;
-  ElaSpinBox *serverPortSpin;
-  ElaSpinBox *instanceNumberSpin;
-  ElaSpinBox *ditherPixelsSpin;
-  ElaCheckBox *ditherRaOnlyCheck;
-  ElaSpinBox *settlePixelToleranceSpin;
-  ElaSpinBox *minSettleTimeSpin;
-  ElaSpinBox *settleTimeoutSpin;
-  ElaCheckBox *guidingStartRetryCheck;
-  ElaSpinBox *guidingStartTimeoutSpin;
-  ElaSpinBox *roiPercentageSpin;
-  ElaMessageButton *okButton;
-  ElaMessageButton *cancelButton;
+    QVBoxLayout *createTopLayout(const QString &description);
+    QLineEdit *phd2PathEdit;
+    QLineEdit *serverUrlEdit;
+    ElaSpinBox *serverPortSpin;
+    ElaSpinBox *instanceNumberSpin;
+    ElaSpinBox *ditherPixelsSpin;
+    ElaCheckBox *ditherRaOnlyCheck;
+    ElaSpinBox *settlePixelToleranceSpin;
+    ElaSpinBox *minSettleTimeSpin;
+    ElaSpinBox *settleTimeoutSpin;
+    ElaCheckBox *guidingStartRetryCheck;
+    ElaSpinBox *guidingStartTimeoutSpin;
+    ElaSpinBox *roiPercentageSpin;
+    ElaMessageButton *okButton;
+    ElaMessageButton *cancelButton;
 
-  void setupUi();
+    void setupUi();
 };
 
-#endif // PHD2SETUPDIALOG_H
+#endif  // PHD2SETUPDIALOG_H
