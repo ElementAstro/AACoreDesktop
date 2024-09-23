@@ -8,7 +8,6 @@
 #include <QChart>
 #include <QChartView>
 #include <QDateTimeEdit>
-#include <QDoubleSpinBox>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QStandardItemModel>

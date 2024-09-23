@@ -14,6 +14,9 @@ add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets Charts Sql WebSockets Xml SerialPort)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Charts Sql WebSockets Xml SerialPort)
 
+find_package(libssh REQUIRED)
+include_directories(${LIBSSH_INCLUDE_DIRS})
+
 file(GLOB_RECURSE CPP_FILES  *.cpp *.h)
 foreach(filepath ${CPP_FILES})
     string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/" "" filename ${filepath})
@@ -72,7 +75,7 @@ include_directories(
 set(EXECUTABLE_OUTPUT_PATH  ${CMAKE_BINARY_DIR})
 target_link_libraries(AACoreDesktop PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Charts 
 Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::WebSockets Qt${QT_VERSION_MAJOR}::Xml Qt${QT_VERSION_MAJOR}::SerialPort
-    elawidgettools 
+    elawidgettools  ssh
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

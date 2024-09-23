@@ -13,8 +13,43 @@
 #include "ElaText.h"
 #include "ElaToggleSwitch.h"
 
+namespace {
+const int TextPixelSize = 15;
+const int LayoutSpacing = 10;
+const int LayoutMargin = 10;
+const int ChartHeight = 200;
+const int AxisYRange = 90;
+const int AxisXRange = 24;
+const int AxisXTickCount = 9;
+const int ModelColumnCount = 8;
+}  // namespace
+
 T_SimpleSequencerPage::T_SimpleSequencerPage(QWidget *parent)
-    : T_BasePage(parent) {
+    : T_BasePage(parent),
+      mainLayout(nullptr),
+      topWidget(nullptr),
+      middleWidget(nullptr),
+      bottomWidget(nullptr),
+      model(nullptr),
+      coolCameraSwitch(nullptr),
+      unparkMountSwitch(nullptr),
+      meridianFlipSwitch(nullptr),
+      warmCameraSwitch(nullptr),
+      parkMountSwitch(nullptr),
+      delayStartSpinBox(nullptr),
+      sequenceModeCombo(nullptr),
+      estimatedDownloadTimeEdit(nullptr),
+      estimatedFinishTimeEdit(nullptr),
+      estFinishTimeThisTargetEdit(nullptr),
+      targetTable(nullptr),
+      chartView(nullptr),
+      backButton(nullptr),
+      addButton(nullptr),
+      deleteButton(nullptr),
+      resetButton(nullptr),
+      moveUpButton(nullptr),
+      moveDownButton(nullptr),
+      startButton(nullptr) {
     setupUI();
     applyStyles();
 }
@@ -30,12 +65,13 @@ void T_SimpleSequencerPage::setupUI() {
     mainLayout->addWidget(topWidget);
     mainLayout->addWidget(middleWidget);
     mainLayout->addWidget(bottomWidget);
-    mainLayout->setSpacing(10);
-    mainLayout->setContentsMargins(10, 10, 10, 10);
+    mainLayout->setSpacing(LayoutSpacing);
+    mainLayout->setContentsMargins(LayoutMargin, LayoutMargin, LayoutMargin,
+                                   LayoutMargin);
 
-    QWidget *centralWidget = new QWidget(this);
+    auto centralWidget = new QWidget(this);
     centralWidget->setWindowTitle("简单序列面板");
-    QVBoxLayout *centerLayout = new QVBoxLayout(centralWidget);
+    auto centerLayout = new QVBoxLayout(centralWidget);
     centerLayout->addLayout(mainLayout);
     centerLayout->setContentsMargins(0, 0, 0, 0);
     addCentralWidget(centralWidget, true, true, 0);
@@ -43,26 +79,26 @@ void T_SimpleSequencerPage::setupUI() {
 
 void T_SimpleSequencerPage::createTopSection() {
     topWidget = new QWidget(this);
-    QHBoxLayout *topLayout = new QHBoxLayout(topWidget);
+    auto topLayout = new QHBoxLayout(topWidget);
 
-    QWidget *startOptionsWidget = new QWidget(topWidget);
-    QVBoxLayout *startOptionsLayout = new QVBoxLayout(startOptionsWidget);
-    ElaText *targetSetStartText =
+    auto startOptionsWidget = new QWidget(topWidget);
+    auto startOptionsLayout = new QVBoxLayout(startOptionsWidget);
+    auto targetSetStartText =
         new ElaText("Target Set Start Options", startOptionsWidget);
-    targetSetStartText->setTextPixelSize(15);
+    targetSetStartText->setTextPixelSize(TextPixelSize);
 
-    QWidget *switchesWidget = new QWidget(startOptionsWidget);
-    QHBoxLayout *switchesLayout = new QHBoxLayout(switchesWidget);
+    auto switchesWidget = new QWidget(startOptionsWidget);
+    auto switchesLayout = new QHBoxLayout(switchesWidget);
 
     coolCameraSwitch = new ElaToggleSwitch(switchesWidget);
-    ElaText *coolCameraLabel = new ElaText("Cool Camera", switchesWidget);
-    coolCameraLabel->setTextPixelSize(15);
+    auto coolCameraLabel = new ElaText("Cool Camera", switchesWidget);
+    coolCameraLabel->setTextPixelSize(TextPixelSize);
     unparkMountSwitch = new ElaToggleSwitch(switchesWidget);
-    ElaText *unparkMountLabel = new ElaText("Unpark Mount", switchesWidget);
-    unparkMountLabel->setTextPixelSize(15);
+    auto unparkMountLabel = new ElaText("Unpark Mount", switchesWidget);
+    unparkMountLabel->setTextPixelSize(TextPixelSize);
     meridianFlipSwitch = new ElaToggleSwitch(switchesWidget);
-    ElaText *meridianFlipLabel = new ElaText("Meridian Flip", switchesWidget);
-    meridianFlipLabel->setTextPixelSize(15);
+    auto meridianFlipLabel = new ElaText("Meridian Flip", switchesWidget);
+    meridianFlipLabel->setTextPixelSize(TextPixelSize);
 
     switchesLayout->addWidget(coolCameraSwitch);
     switchesLayout->addWidget(coolCameraLabel);
@@ -75,21 +111,21 @@ void T_SimpleSequencerPage::createTopSection() {
     startOptionsLayout->addWidget(targetSetStartText);
     startOptionsLayout->addWidget(switchesWidget);
 
-    QWidget *endOptionsWidget = new QWidget(topWidget);
-    QVBoxLayout *endOptionsLayout = new QVBoxLayout(endOptionsWidget);
-    ElaText *targetSetEndText =
+    auto endOptionsWidget = new QWidget(topWidget);
+    auto endOptionsLayout = new QVBoxLayout(endOptionsWidget);
+    auto targetSetEndText =
         new ElaText("Target Set End Options", endOptionsWidget);
-    targetSetEndText->setTextPixelSize(15);
+    targetSetEndText->setTextPixelSize(TextPixelSize);
 
-    QWidget *endSwitchesWidget = new QWidget(endOptionsWidget);
-    QHBoxLayout *endSwitchesLayout = new QHBoxLayout(endSwitchesWidget);
+    auto endSwitchesWidget = new QWidget(endOptionsWidget);
+    auto endSwitchesLayout = new QHBoxLayout(endSwitchesWidget);
 
     warmCameraSwitch = new ElaToggleSwitch(endSwitchesWidget);
-    ElaText *warmCameraLabel = new ElaText("Warm Camera", endSwitchesWidget);
-    warmCameraLabel->setTextPixelSize(15);
+    auto warmCameraLabel = new ElaText("Warm Camera", endSwitchesWidget);
+    warmCameraLabel->setTextPixelSize(TextPixelSize);
     parkMountSwitch = new ElaToggleSwitch(endSwitchesWidget);
-    ElaText *parkMountLabel = new ElaText("Park Mount", endSwitchesWidget);
-    parkMountLabel->setTextPixelSize(15);
+    auto parkMountLabel = new ElaText("Park Mount", endSwitchesWidget);
+    parkMountLabel->setTextPixelSize(TextPixelSize);
 
     endSwitchesLayout->addWidget(warmCameraSwitch);
     endSwitchesLayout->addWidget(warmCameraLabel);
@@ -107,42 +143,42 @@ void T_SimpleSequencerPage::createTopSection() {
 
 void T_SimpleSequencerPage::createMiddleSection() {
     middleWidget = new QWidget(this);
-    QGridLayout *middleLayout = new QGridLayout(middleWidget);
+    auto middleLayout = new QGridLayout(middleWidget);
 
-    auto *delayStartLabel = new ElaText("Delay start:", middleWidget);
-    delayStartLabel->setTextPixelSize(15);
+    auto delayStartLabel = new ElaText("Delay start:", middleWidget);
+    delayStartLabel->setTextPixelSize(TextPixelSize);
     middleLayout->addWidget(delayStartLabel, 0, 0);
     delayStartSpinBox = new ElaSpinBox(middleWidget);
     delayStartSpinBox->setSuffix(" s");
     middleLayout->addWidget(delayStartSpinBox, 0, 1);
 
-    auto *sequenceModeLabel = new ElaText("Sequence mode:", middleWidget);
-    sequenceModeLabel->setTextPixelSize(15);
+    auto sequenceModeLabel = new ElaText("Sequence mode:", middleWidget);
+    sequenceModeLabel->setTextPixelSize(TextPixelSize);
     middleLayout->addWidget(sequenceModeLabel, 1, 0);
     sequenceModeCombo = new ElaComboBox(middleWidget);
     sequenceModeCombo->addItem("One after another");
     middleLayout->addWidget(sequenceModeCombo, 1, 1);
 
-    auto *estimatedDownloadTimeLabel =
+    auto estimatedDownloadTimeLabel =
         new ElaText("Estimated download time:", middleWidget);
-    estimatedDownloadTimeLabel->setTextPixelSize(15);
+    estimatedDownloadTimeLabel->setTextPixelSize(TextPixelSize);
     middleLayout->addWidget(estimatedDownloadTimeLabel, 2, 0);
     estimatedDownloadTimeEdit = new ElaLineEdit(middleWidget);
     estimatedDownloadTimeEdit->setReadOnly(true);
     middleLayout->addWidget(estimatedDownloadTimeEdit, 2, 1);
 
-    auto *estimatedFinishTimeLabel =
+    auto estimatedFinishTimeLabel =
         new ElaText("Estimated finish time:", middleWidget);
-    estimatedFinishTimeLabel->setTextPixelSize(15);
+    estimatedFinishTimeLabel->setTextPixelSize(TextPixelSize);
     middleLayout->addWidget(estimatedFinishTimeLabel, 3, 0);
     estimatedFinishTimeEdit = new QDateTimeEdit(middleWidget);
     estimatedFinishTimeEdit->setReadOnly(true);
     estimatedFinishTimeEdit->setDisplayFormat("yyyy-MM-dd HH:mm:ss");
     middleLayout->addWidget(estimatedFinishTimeEdit, 3, 1);
 
-    auto *estFinishTimeThisTargetLabel =
+    auto estFinishTimeThisTargetLabel =
         new ElaText("Est. finish time (this target):", middleWidget);
-    estFinishTimeThisTargetLabel->setTextPixelSize(15);
+    estFinishTimeThisTargetLabel->setTextPixelSize(TextPixelSize);
     middleLayout->addWidget(estFinishTimeThisTargetLabel, 4, 0);
     estFinishTimeThisTargetEdit = new QDateTimeEdit(middleWidget);
     estFinishTimeThisTargetEdit->setReadOnly(true);
@@ -152,14 +188,14 @@ void T_SimpleSequencerPage::createMiddleSection() {
 
 void T_SimpleSequencerPage::createBottomSection() {
     bottomWidget = new QWidget(this);
-    QVBoxLayout *bottomLayout = new QVBoxLayout(bottomWidget);
+    auto bottomLayout = new QVBoxLayout(bottomWidget);
 
     targetTable = new ElaTableView(bottomWidget);
-    model = new QStandardItemModel(1, 8, this);
+    model = new QStandardItemModel(1, ModelColumnCount, this);
     model->setHorizontalHeaderLabels({"Enabled", "Progress", "Total #", "Time",
                                       "Type", "Filter", "Binning", "Dither"});
 
-    QStandardItem *enabledItem = new QStandardItem();
+    auto enabledItem = new QStandardItem();
     enabledItem->setCheckable(true);
     enabledItem->setCheckState(Qt::Checked);
     model->setItem(0, 0, enabledItem);
@@ -183,39 +219,39 @@ void T_SimpleSequencerPage::createBottomSection() {
 }
 
 void T_SimpleSequencerPage::createChart() {
-    QBarSet *set = new QBarSet("RA");
+    auto set = new QBarSet("RA");
     *set << 90 << 60 << 30 << 0;
 
-    QBarSeries *series = new QBarSeries();
+    auto series = new QBarSeries();
     series->append(set);
 
-    QChart *chart = new QChart();
+    auto chart = new QChart();
     chart->addSeries(series);
     chart->setTitle("Target");
     chart->setAnimationOptions(QChart::SeriesAnimations);
     chart->setBackgroundVisible(false);
     chart->legend()->hide();
 
-    QValueAxis *axisY = new QValueAxis();
-    axisY->setRange(0, 90);
+    auto axisY = new QValueAxis();
+    axisY->setRange(0, AxisYRange);
     chart->addAxis(axisY, Qt::AlignLeft);
     series->attachAxis(axisY);
 
-    QValueAxis *axisX = new QValueAxis();
-    axisX->setRange(0, 24);
-    axisX->setTickCount(9);
+    auto axisX = new QValueAxis();
+    axisX->setRange(0, AxisXRange);
+    axisX->setTickCount(AxisXTickCount);
     axisX->setLabelFormat("%.0f");
     chart->addAxis(axisX, Qt::AlignBottom);
     series->attachAxis(axisX);
 
     chartView = new QChartView(chart);
     chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setFixedHeight(200);
+    chartView->setFixedHeight(ChartHeight);
 }
 
 void T_SimpleSequencerPage::createControlButtons() {
-    QWidget *buttonWidget = new QWidget(this);
-    QHBoxLayout *buttonLayout = new QHBoxLayout(buttonWidget);
+    auto buttonWidget = new QWidget(this);
+    auto buttonLayout = new QHBoxLayout(buttonWidget);
 
     backButton = new ElaPushButton("Back", buttonWidget);
     addButton = new ElaPushButton("Add", buttonWidget);
@@ -262,7 +298,7 @@ void T_SimpleSequencerPage::onAddButtonClicked() {
     int rowCount = model->rowCount();
     model->insertRow(rowCount);
 
-    QStandardItem *enabledItem = new QStandardItem();
+    auto enabledItem = new QStandardItem();
     enabledItem->setCheckable(true);
     enabledItem->setCheckState(Qt::Checked);
     model->setItem(rowCount, 0, enabledItem);
@@ -277,10 +313,10 @@ void T_SimpleSequencerPage::onAddButtonClicked() {
 }
 
 void T_SimpleSequencerPage::onDeleteButtonClicked() {
-    QItemSelectionModel *selectionModel = targetTable->selectionModel();
-    QModelIndexList selectedRows = selectionModel->selectedRows();
+    auto selectionModel = targetTable->selectionModel();
+    auto selectedRows = selectionModel->selectedRows();
 
-    for (const QModelIndex &index : selectedRows) {
+    for (const auto &index : selectedRows) {
         model->removeRow(index.row());
     }
 }
@@ -291,8 +327,8 @@ void T_SimpleSequencerPage::onResetButtonClicked() {
 }
 
 void T_SimpleSequencerPage::onMoveUpButtonClicked() {
-    QItemSelectionModel *selectionModel = targetTable->selectionModel();
-    QModelIndexList selectedRows = selectionModel->selectedRows();
+    auto selectionModel = targetTable->selectionModel();
+    auto selectedRows = selectionModel->selectedRows();
 
     if (selectedRows.isEmpty() || selectedRows.first().row() == 0) {
         return;
@@ -305,8 +341,8 @@ void T_SimpleSequencerPage::onMoveUpButtonClicked() {
 }
 
 void T_SimpleSequencerPage::onMoveDownButtonClicked() {
-    QItemSelectionModel *selectionModel = targetTable->selectionModel();
-    QModelIndexList selectedRows = selectionModel->selectedRows();
+    auto selectionModel = targetTable->selectionModel();
+    auto selectedRows = selectionModel->selectedRows();
 
     if (selectedRows.isEmpty() ||
         selectedRows.first().row() == model->rowCount() - 1) {

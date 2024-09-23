@@ -6,22 +6,30 @@
 
 #include "ElaText.h"
 
-InfoCard::InfoCard(const QString &title, const QString &value, QWidget *parent)
-    : QWidget(parent), m_title(title), m_value(value) {
+namespace {
+constexpr int MinimumHeight = 80;
+constexpr int MarginSize = 10;
+constexpr int TitleTextPixelSize = 18;
+constexpr int ValueTextPixelSize = 16;
+}  // namespace
+
+InfoCard::InfoCard(QString title, QString value, QWidget *parent)
+    : QWidget(parent), m_title(std::move(title)), m_value(std::move(value)) {
     setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-    setMinimumHeight(80);
+    setMinimumHeight(MinimumHeight);
 
     // 创建布局
-    QVBoxLayout *layout = new QVBoxLayout(this);
-    layout->setContentsMargins(10, 10, 10, 10);  // 设置内边距
+    auto *layout = new QVBoxLayout(this);
+    layout->setContentsMargins(MarginSize, MarginSize, MarginSize,
+                               MarginSize);  // 设置内边距
 
     // 创建标题标签
-    ElaText *titleLabel = new ElaText(m_title, this);
-    titleLabel->setTextPixelSize(18);
+    auto *titleLabel = new ElaText(m_title, this);
+    titleLabel->setTextPixelSize(TitleTextPixelSize);
 
     // 创建值标签
-    ElaText *valueLabel = new ElaText(m_value, this);
-    valueLabel->setTextPixelSize(16);
+    auto *valueLabel = new ElaText(m_value, this);
+    valueLabel->setTextPixelSize(ValueTextPixelSize);
 
     // 将标签添加到布局
     layout->addWidget(titleLabel);

@@ -1,7 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
+#include <QTranslator>
 
 #include "ElaWindow.h"
 
@@ -27,10 +27,12 @@ class T_SerialDebugPage;
 class T_SoftwarePage;
 class T_ProcessPage;
 class T_SystemInfoPage;
+class T_TerminalPage;
 
 class T_LogPanelPage;
 
 class T_Setting;
+class T_I18NPage;
 
 class MainWindow : public ElaWindow {
     Q_OBJECT
@@ -43,6 +45,9 @@ public:
     void initWindow();
     void initEdgeLayout();
     void initContent();
+
+private slots:
+    void changeLanguage(const QString &languageCode);
 
 private:
     ElaContentDialog* _closeDialog{nullptr};
@@ -65,10 +70,15 @@ private:
     T_SystemInfoPage *_systemInfoPage{nullptr};
     T_LogPanelPage *_logPanelPage{nullptr};
     T_Setting* _settingPage{nullptr};
+    T_TerminalPage *_terminalPage{nullptr};
+
+    QTranslator translator;
+    T_I18NPage *i18nManager;  // I18nManager 组件实例
 
     QString _cameraKey{""};
     QString _elaDxgiKey{""};
     QString _aboutKey{""};
     QString _settingKey{""};
+    QString _i18nKey{""};
 };
 #endif  // MAINWINDOW_H

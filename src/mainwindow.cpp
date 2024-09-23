@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QGraphicsView>
 #include <QHBoxLayout>
+#include <QSettings>
 #include <QStackedWidget>
 #include <QStatusBar>
 #include <QVBoxLayout>
@@ -23,6 +24,7 @@
 #include "Page/T_Focuser.h"
 #include "Page/T_Guider.h"
 #include "Page/T_Home.h"
+#include "Page/T_I18n.h"
 #include "Page/T_LogPanel.h"
 #include "Page/T_Process.hpp"
 #include "Page/T_SerialConfig.h"
@@ -33,10 +35,21 @@
 #include "Page/T_SystemInfo.h"
 #include "Page/T_TargetSearch.h"
 #include "Page/T_Telescope.h"
+#include "Page/T_Terminal.h"
 
 #include "T_About.h"
 
-MainWindow::MainWindow(QWidget *parent) : ElaWindow(parent) {
+namespace {
+const int WindowWidth = 1200;
+const int WindowHeight = 740;
+const int StatusTextPixelSize = 14;
+const int SceneRectSize = 1500;
+const int ItemSize = 100;
+const int AboutPageSize = 400;
+}  // namespace
+
+MainWindow::MainWindow(QWidget *parent)
+    : ElaWindow(parent), i18nManager(new T_I18NPage(this)) {
     initWindow();
 
     // 额外布局
@@ -47,6 +60,10 @@ MainWindow::MainWindow(QWidget *parent) : ElaWindow(parent) {
 
     // 拦截默认关闭事件
     _closeDialog = new ElaContentDialog(this);
+    _closeDialog->setWindowTitle("关闭");
+    _closeDialog->setLeftButtonText("取消");
+    _closeDialog->setMiddleButtonText("最小化");
+    _closeDialog->setRightButtonText("关闭");
     connect(_closeDialog, &ElaContentDialog::rightButtonClicked, this,
             &MainWindow::closeWindow);
     connect(_closeDialog, &ElaContentDialog::middleButtonClicked, this,
@@ -59,7 +76,7 @@ MainWindow::MainWindow(QWidget *parent) : ElaWindow(parent) {
     moveToCenter();
 }
 
-MainWindow::~MainWindow() {}
+MainWindow::~MainWindow() = default;
 
 void MainWindow::onCloseButtonClicked() {
     ElaContentDialog dialog(this);
@@ -72,7 +89,7 @@ void MainWindow::onCloseButtonClicked() {
 
 void MainWindow::initWindow() {
     setWindowIcon(QIcon(":/Resource/Image/icon.ico"));
-    resize(1200, 740);
+    resize(WindowWidth, WindowHeight);
     // ElaLog::getInstance()->initMessageLog(true);
     // eApp->setThemeMode(ElaThemeType::Dark);
     // setIsNavigationBarEnable(false);
@@ -88,9 +105,9 @@ void MainWindow::initWindow() {
 
 void MainWindow::initEdgeLayout() {
     // 状态栏
-    ElaStatusBar *statusBar = new ElaStatusBar(this);
-    ElaText *statusText = new ElaText("初始化成功！", this);
-    statusText->setTextPixelSize(14);
+    auto statusBar = new ElaStatusBar(this);
+    auto statusText = new ElaText("初始化成功！", this);
+    statusText->setTextPixelSize(StatusTextPixelSize);
     statusBar->addWidget(statusText);
     this->setStatusBar(statusBar);
 }
@@ -113,37 +130,37 @@ void MainWindow::initContent() {
     _systemInfoPage = new T_SystemInfoPage(this);
     _logPanelPage = new T_LogPanelPage(this);
     _settingPage = new T_Setting(this);
+    _terminalPage = new T_TerminalPage(this);
 
     // GraphicsView
-    ElaGraphicsScene *scene = new ElaGraphicsScene(this);
-    scene->setSceneRect(0, 0, 1500, 1500);
-    ElaGraphicsItem *item1 = new ElaGraphicsItem();
-    item1->setWidth(100);
-    item1->setHeight(100);
-    item1->setMaxLinkPortCount(100);
+    auto scene = new ElaGraphicsScene(this);
+    scene->setSceneRect(0, 0, SceneRectSize, SceneRectSize);
+    auto item1 = new ElaGraphicsItem();
+    item1->setWidth(ItemSize);
+    item1->setHeight(ItemSize);
+    item1->setMaxLinkPortCount(ItemSize);
     item1->setMaxLinkPortCount(1);
-    ElaGraphicsItem *item2 = new ElaGraphicsItem();
-    item2->setWidth(100);
-    item2->setHeight(100);
+    auto item2 = new ElaGraphicsItem();
+    item2->setWidth(ItemSize);
+    item2->setHeight(ItemSize);
     scene->addItem(item1);
     scene->addItem(item2);
-    ElaGraphicsView *view = new ElaGraphicsView(scene);
+    auto view = new ElaGraphicsView(scene);
     view->setScene(scene);
 
-    QString testKey_1;
-    QString testKey_2;
+    QString testKey2;
+    QString testKey1;
     addPageNode("HOME", _homePage, ElaIconType::House);
     addPageNode("DeviceConnection", _deviceConnectionPage,
                 ElaIconType::HardDrive);
 
-    addExpanderNode("DeviceControl", testKey_2, ElaIconType::ScrewdriverWrench);
+    addExpanderNode("DeviceControl", testKey2, ElaIconType::ScrewdriverWrench);
     QString cameraKey;
-    addPageNode("Camera", _cameraPage, testKey_2, ElaIconType::Camera);
-    addPageNode("Telescope", _telescopePage, testKey_2, ElaIconType::Telescope);
-    addPageNode("Focuser", _focuserPage, testKey_2, ElaIconType::BracketsCurly);
-    addPageNode("FilterWheel", _filterWheelPage, testKey_2,
-                ElaIconType::Filter);
-    addPageNode("Guider", _guiderPage, testKey_2, 0, ElaIconType::MapLocation);
+    addPageNode("Camera", _cameraPage, testKey2, ElaIconType::Camera);
+    addPageNode("Telescope", _telescopePage, testKey2, ElaIconType::Telescope);
+    addPageNode("Focuser", _focuserPage, testKey2, ElaIconType::BracketsCurly);
+    addPageNode("FilterWheel", _filterWheelPage, testKey2, ElaIconType::Filter);
+    addPageNode("Guider", _guiderPage, testKey2, 0, ElaIconType::MapLocation);
 
     QString sequencerKey;
     addExpanderNode("Sequencer", sequencerKey, ElaIconType::BallotCheck);
@@ -161,6 +178,8 @@ void MainWindow::initContent() {
     addPageNode("Software", _softwarePage, systemKey, ElaIconType::Grid2);
     addPageNode("Process", _processPage, systemKey, ElaIconType::BarsProgress);
     addPageNode("SystemInfo", _systemInfoPage, systemKey, ElaIconType::List);
+    addPageNode("Terminal", _terminalPage, systemKey, ElaIconType::Terminal);
+
     addPageNode("Config", _configPanel, ElaIconType::GearComplex);
 
     addPageNode("Log", _logPanelPage, ElaIconType::List);
@@ -168,17 +187,17 @@ void MainWindow::initContent() {
     addFooterNode("About", nullptr, _aboutKey, 0, ElaIconType::User);
     auto *aboutPage = new T_About();
     aboutPage->hide();
-    connect(
-        this, &ElaWindow::navigationNodeClicked, this,
-        [=](ElaNavigationType::NavigationNodeType nodeType, QString nodeKey) {
-            if (_aboutKey == nodeKey) {
-                aboutPage->setFixedSize(400, 400);
-                aboutPage->moveToCenter();
-                aboutPage->show();
-            }
-        });
+    connect(this, &ElaWindow::navigationNodeClicked, this,
+            [=](ElaNavigationType::NavigationNodeType, const QString &nodeKey) {
+                if (_aboutKey == nodeKey) {
+                    aboutPage->setFixedSize(AboutPageSize, AboutPageSize);
+                    aboutPage->moveToCenter();
+                    aboutPage->show();
+                }
+            });
     addFooterNode("Setting", _settingPage, _settingKey, 0,
                   ElaIconType::GearComplex);
+    addFooterNode("I18n", i18nManager, _i18nKey, 0, ElaIconType::Language);
     connect(this, &MainWindow::userInfoCardClicked, this, [=]() {
         this->navigation(_homePage->property("ElaPageKey").toString());
     });
@@ -187,4 +206,21 @@ void MainWindow::initContent() {
     });
     qDebug() << "已注册的事件列表"
              << ElaEventBus::getInstance()->getRegisteredEventsName();
+}
+
+void MainWindow::changeLanguage(const QString &languageCode) {
+    // 卸载当前翻译
+    qApp->removeTranslator(&translator);
+
+    // 加载新的翻译文件
+    QString qmFile = ":/translations/translation_" + languageCode + ".qm";
+    if (translator.load(qmFile)) {
+        qApp->installTranslator(&translator);
+        // 更新主窗口中的所有翻译字符串
+        setWindowTitle(tr("I18N Manager"));
+    }
+
+    // 保存用户选择到 QSettings
+    QSettings settings("MyCompany", "MyApp");
+    settings.setValue("language", languageCode);
 }

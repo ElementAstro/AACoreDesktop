@@ -9,7 +9,7 @@ class InfoCard : public QWidget {
     Q_OBJECT
 
 public:
-    InfoCard(const QString &title, const QString &value,
+    InfoCard(QString title, QString value,
              QWidget *parent = nullptr);
 
     void setTitle(const QString &title);
