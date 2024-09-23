@@ -2,9 +2,8 @@
 #include "T_BasePage.h"
 
 #include <QHeaderView>
-#include <QStandardItemModel>
-#include <QTableView>
 #include <QMessageBox>
+#include <QStandardItemModel>
 
 #include "ElaComboBox.h"
 #include "ElaLineEdit.h"
@@ -50,17 +49,20 @@ void T_SimpleSequencerPage::createTopSection() {
     QVBoxLayout *startOptionsLayout = new QVBoxLayout(startOptionsWidget);
     ElaText *targetSetStartText =
         new ElaText("Target Set Start Options", startOptionsWidget);
-    targetSetStartText->setTextPixelSize(14);
+    targetSetStartText->setTextPixelSize(15);
 
     QWidget *switchesWidget = new QWidget(startOptionsWidget);
     QHBoxLayout *switchesLayout = new QHBoxLayout(switchesWidget);
 
     coolCameraSwitch = new ElaToggleSwitch(switchesWidget);
-    QLabel *coolCameraLabel = new QLabel("Cool Camera", switchesWidget);
+    ElaText *coolCameraLabel = new ElaText("Cool Camera", switchesWidget);
+    coolCameraLabel->setTextPixelSize(15);
     unparkMountSwitch = new ElaToggleSwitch(switchesWidget);
-    QLabel *unparkMountLabel = new QLabel("Unpark Mount", switchesWidget);
+    ElaText *unparkMountLabel = new ElaText("Unpark Mount", switchesWidget);
+    unparkMountLabel->setTextPixelSize(15);
     meridianFlipSwitch = new ElaToggleSwitch(switchesWidget);
-    QLabel *meridianFlipLabel = new QLabel("Meridian Flip", switchesWidget);
+    ElaText *meridianFlipLabel = new ElaText("Meridian Flip", switchesWidget);
+    meridianFlipLabel->setTextPixelSize(15);
 
     switchesLayout->addWidget(coolCameraSwitch);
     switchesLayout->addWidget(coolCameraLabel);
@@ -77,15 +79,17 @@ void T_SimpleSequencerPage::createTopSection() {
     QVBoxLayout *endOptionsLayout = new QVBoxLayout(endOptionsWidget);
     ElaText *targetSetEndText =
         new ElaText("Target Set End Options", endOptionsWidget);
-    targetSetEndText->setTextPixelSize(14);
+    targetSetEndText->setTextPixelSize(15);
 
     QWidget *endSwitchesWidget = new QWidget(endOptionsWidget);
     QHBoxLayout *endSwitchesLayout = new QHBoxLayout(endSwitchesWidget);
 
     warmCameraSwitch = new ElaToggleSwitch(endSwitchesWidget);
-    QLabel *warmCameraLabel = new QLabel("Warm Camera", endSwitchesWidget);
+    ElaText *warmCameraLabel = new ElaText("Warm Camera", endSwitchesWidget);
+    warmCameraLabel->setTextPixelSize(15);
     parkMountSwitch = new ElaToggleSwitch(endSwitchesWidget);
-    QLabel *parkMountLabel = new QLabel("Park Mount", endSwitchesWidget);
+    ElaText *parkMountLabel = new ElaText("Park Mount", endSwitchesWidget);
+    parkMountLabel->setTextPixelSize(15);
 
     endSwitchesLayout->addWidget(warmCameraSwitch);
     endSwitchesLayout->addWidget(warmCameraLabel);
@@ -105,29 +109,41 @@ void T_SimpleSequencerPage::createMiddleSection() {
     middleWidget = new QWidget(this);
     QGridLayout *middleLayout = new QGridLayout(middleWidget);
 
-    middleLayout->addWidget(new QLabel("Delay start:"), 0, 0);
+    auto *delayStartLabel = new ElaText("Delay start:", middleWidget);
+    delayStartLabel->setTextPixelSize(15);
+    middleLayout->addWidget(delayStartLabel, 0, 0);
     delayStartSpinBox = new ElaSpinBox(middleWidget);
     delayStartSpinBox->setSuffix(" s");
     middleLayout->addWidget(delayStartSpinBox, 0, 1);
 
-    middleLayout->addWidget(new QLabel("Sequence mode:"), 1, 0);
+    auto *sequenceModeLabel = new ElaText("Sequence mode:", middleWidget);
+    sequenceModeLabel->setTextPixelSize(15);
+    middleLayout->addWidget(sequenceModeLabel, 1, 0);
     sequenceModeCombo = new ElaComboBox(middleWidget);
     sequenceModeCombo->addItem("One after another");
     middleLayout->addWidget(sequenceModeCombo, 1, 1);
 
-    middleLayout->addWidget(new QLabel("Estimated download time:"), 2, 0);
+    auto *estimatedDownloadTimeLabel =
+        new ElaText("Estimated download time:", middleWidget);
+    estimatedDownloadTimeLabel->setTextPixelSize(15);
+    middleLayout->addWidget(estimatedDownloadTimeLabel, 2, 0);
     estimatedDownloadTimeEdit = new ElaLineEdit(middleWidget);
     estimatedDownloadTimeEdit->setReadOnly(true);
     middleLayout->addWidget(estimatedDownloadTimeEdit, 2, 1);
 
-    middleLayout->addWidget(new QLabel("Estimated finish time:"), 3, 0);
+    auto *estimatedFinishTimeLabel =
+        new ElaText("Estimated finish time:", middleWidget);
+    estimatedFinishTimeLabel->setTextPixelSize(15);
+    middleLayout->addWidget(estimatedFinishTimeLabel, 3, 0);
     estimatedFinishTimeEdit = new QDateTimeEdit(middleWidget);
     estimatedFinishTimeEdit->setReadOnly(true);
     estimatedFinishTimeEdit->setDisplayFormat("yyyy-MM-dd HH:mm:ss");
     middleLayout->addWidget(estimatedFinishTimeEdit, 3, 1);
 
-    middleLayout->addWidget(new QLabel("Est. finish time (this target):"), 4,
-                            0);
+    auto *estFinishTimeThisTargetLabel =
+        new ElaText("Est. finish time (this target):", middleWidget);
+    estFinishTimeThisTargetLabel->setTextPixelSize(15);
+    middleLayout->addWidget(estFinishTimeThisTargetLabel, 4, 0);
     estFinishTimeThisTargetEdit = new QDateTimeEdit(middleWidget);
     estFinishTimeThisTargetEdit->setReadOnly(true);
     estFinishTimeThisTargetEdit->setDisplayFormat("yyyy-MM-dd HH:mm:ss");
@@ -220,13 +236,20 @@ void T_SimpleSequencerPage::createControlButtons() {
 
     mainLayout->addWidget(buttonWidget);
 
-    connect(backButton, &QPushButton::clicked, this, &T_SimpleSequencerPage::onBackButtonClicked);
-    connect(addButton, &QPushButton::clicked, this, &T_SimpleSequencerPage::onAddButtonClicked);
-    connect(deleteButton, &QPushButton::clicked, this, &T_SimpleSequencerPage::onDeleteButtonClicked);
-    connect(resetButton, &QPushButton::clicked, this, &T_SimpleSequencerPage::onResetButtonClicked);
-    connect(moveUpButton, &QPushButton::clicked, this, &T_SimpleSequencerPage::onMoveUpButtonClicked);
-    connect(moveDownButton, &QPushButton::clicked, this, &T_SimpleSequencerPage::onMoveDownButtonClicked);
-    connect(startButton, &QPushButton::clicked, this, &T_SimpleSequencerPage::onStartButtonClicked);
+    connect(backButton, &QPushButton::clicked, this,
+            &T_SimpleSequencerPage::onBackButtonClicked);
+    connect(addButton, &QPushButton::clicked, this,
+            &T_SimpleSequencerPage::onAddButtonClicked);
+    connect(deleteButton, &QPushButton::clicked, this,
+            &T_SimpleSequencerPage::onDeleteButtonClicked);
+    connect(resetButton, &QPushButton::clicked, this,
+            &T_SimpleSequencerPage::onResetButtonClicked);
+    connect(moveUpButton, &QPushButton::clicked, this,
+            &T_SimpleSequencerPage::onMoveUpButtonClicked);
+    connect(moveDownButton, &QPushButton::clicked, this,
+            &T_SimpleSequencerPage::onMoveDownButtonClicked);
+    connect(startButton, &QPushButton::clicked, this,
+            &T_SimpleSequencerPage::onStartButtonClicked);
 }
 
 void T_SimpleSequencerPage::applyStyles() {}
@@ -264,7 +287,7 @@ void T_SimpleSequencerPage::onDeleteButtonClicked() {
 
 void T_SimpleSequencerPage::onResetButtonClicked() {
     model->removeRows(0, model->rowCount());
-    onAddButtonClicked(); // 添加一行默认数据
+    onAddButtonClicked();  // 添加一行默认数据
 }
 
 void T_SimpleSequencerPage::onMoveUpButtonClicked() {
@@ -277,20 +300,23 @@ void T_SimpleSequencerPage::onMoveUpButtonClicked() {
 
     int currentRow = selectedRows.first().row();
     model->insertRow(currentRow - 1, model->takeRow(currentRow));
-    selectionModel->select(model->index(currentRow - 1, 0), QItemSelectionModel::Select);
+    selectionModel->select(model->index(currentRow - 1, 0),
+                           QItemSelectionModel::Select);
 }
 
 void T_SimpleSequencerPage::onMoveDownButtonClicked() {
     QItemSelectionModel *selectionModel = targetTable->selectionModel();
     QModelIndexList selectedRows = selectionModel->selectedRows();
 
-    if (selectedRows.isEmpty() || selectedRows.first().row() == model->rowCount() - 1) {
+    if (selectedRows.isEmpty() ||
+        selectedRows.first().row() == model->rowCount() - 1) {
         return;
     }
 
     int currentRow = selectedRows.first().row();
     model->insertRow(currentRow + 1, model->takeRow(currentRow));
-    selectionModel->select(model->index(currentRow + 1, 0), QItemSelectionModel::Select);
+    selectionModel->select(model->index(currentRow + 1, 0),
+                           QItemSelectionModel::Select);
 }
 
 void T_SimpleSequencerPage::onStartButtonClicked() {

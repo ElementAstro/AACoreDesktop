@@ -5,6 +5,8 @@
 
 #include "ElaWindow.h"
 
+class ElaContentDialog;
+
 class T_Home;
 class T_Icon;
 class T_DeviceConnection;
@@ -28,10 +30,8 @@ class T_SystemInfoPage;
 
 class T_LogPanelPage;
 
-class T_Navigation;
-class T_Popup;
-class T_Card;
-class T_View;
+class T_Setting;
+
 class MainWindow : public ElaWindow {
     Q_OBJECT
 
@@ -45,6 +45,8 @@ public:
     void initContent();
 
 private:
+    ElaContentDialog* _closeDialog{nullptr};
+
     T_Home *_homePage{nullptr};
     T_Icon *_iconPage{nullptr};
     T_DeviceConnection *_deviceConnectionPage{nullptr};
@@ -62,6 +64,8 @@ private:
     T_ProcessPage *_processPage{nullptr};
     T_SystemInfoPage *_systemInfoPage{nullptr};
     T_LogPanelPage *_logPanelPage{nullptr};
+    T_Setting* _settingPage{nullptr};
+
     QString _cameraKey{""};
     QString _elaDxgiKey{""};
     QString _aboutKey{""};

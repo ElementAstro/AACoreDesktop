@@ -7,22 +7,14 @@
 #include <QBarSet>
 #include <QChart>
 #include <QChartView>
-#include <QCheckBox>
-#include <QComboBox>
 #include <QDateTimeEdit>
 #include <QDoubleSpinBox>
 #include <QGridLayout>
 #include <QHBoxLayout>
-#include <QLabel>
-#include <QLineEdit>
-#include <QPushButton>
-#include <QSpinBox>
 #include <QStandardItemModel>
-#include <QTableWidget>
 #include <QVBoxLayout>
 #include <QValueAxis>
 #include <QWidget>
-
 
 #include "T_BasePage.h"
 

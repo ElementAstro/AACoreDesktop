@@ -27,6 +27,7 @@
 #include "Page/T_Process.hpp"
 #include "Page/T_SerialConfig.h"
 #include "Page/T_SerialDebug.h"
+#include "Page/T_Setting.h"
 #include "Page/T_SimpleSequencer.h"
 #include "Page/T_Software.hpp"
 #include "Page/T_SystemInfo.h"
@@ -45,9 +46,14 @@ MainWindow::MainWindow(QWidget *parent) : ElaWindow(parent) {
     initContent();
 
     // 拦截默认关闭事件
+    _closeDialog = new ElaContentDialog(this);
+    connect(_closeDialog, &ElaContentDialog::rightButtonClicked, this,
+            &MainWindow::closeWindow);
+    connect(_closeDialog, &ElaContentDialog::middleButtonClicked, this,
+            &MainWindow::showMinimized);
     this->setIsDefaultClosed(false);
     connect(this, &MainWindow::closeButtonClicked, this,
-            &MainWindow::onCloseButtonClicked);
+            [=]() { _closeDialog->exec(); });
 
     // 移动到中心
     moveToCenter();
@@ -106,6 +112,7 @@ void MainWindow::initContent() {
     _processPage = new T_ProcessPage(this);
     _systemInfoPage = new T_SystemInfoPage(this);
     _logPanelPage = new T_LogPanelPage(this);
+    _settingPage = new T_Setting(this);
 
     // GraphicsView
     ElaGraphicsScene *scene = new ElaGraphicsScene(this);
@@ -170,7 +177,7 @@ void MainWindow::initContent() {
                 aboutPage->show();
             }
         });
-    addFooterNode("Setting", new QWidget(this), _settingKey, 0,
+    addFooterNode("Setting", _settingPage, _settingKey, 0,
                   ElaIconType::GearComplex);
     connect(this, &MainWindow::userInfoCardClicked, this, [=]() {
         this->navigation(_homePage->property("ElaPageKey").toString());
