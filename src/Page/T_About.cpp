@@ -13,7 +13,7 @@
 #include "ElaText.h"
 
 T_About::T_About(QWidget* parent) : ElaWidget(parent), m_progressValue(0) {
-    setWindowTitle("关于 ElaWidgetTools");
+    setWindowTitle("关于 AACoreDesktop");
     setWindowIcon(QIcon(":/include/Image/Moon.jpg"));
     setIsFixedSize(true);
     setWindowButtonFlags(ElaAppBarType::CloseButtonHint);
@@ -38,7 +38,7 @@ T_About::T_About(QWidget* parent) : ElaWidget(parent), m_progressValue(0) {
     titleText->setTextPixelSize(24);
     titleText->setFont(QFont("Arial", 24, QFont::Bold));
 
-    ElaText* versionText = new ElaText("版本 LK-2024", this);
+    ElaText* versionText = new ElaText("版本1.0.0", this);
     versionText->setTextPixelSize(16);
 
     titleLayout->addWidget(titleText);
@@ -58,13 +58,8 @@ T_About::T_About(QWidget* parent) : ElaWidget(parent), m_progressValue(0) {
     QVBoxLayout* infoLayout = new QVBoxLayout();
     infoLayout->setSpacing(10);
 
-    addInfoText(infoLayout, "授权协议:", "MIT");
-    addInfoText(infoLayout, "Windows支持:", "Qt 5.12 及以上");
-    addInfoText(infoLayout, "Linux支持:", "Qt 5.14 及以上");
-    addInfoText(infoLayout, "作者:", "8009963@qq.com");
-    addInfoText(infoLayout, "交流群:", "850243692 (QQ)");
-    addInfoText(infoLayout, "其他信息:",
-                "用户手册及API文档付费提供\n提供额外的专业技术支持");
+    addInfoText(infoLayout, "授权协议:", "AGPL-3");
+    addInfoText(infoLayout, "作者:", "astro_air@126.com");
 
     mainLayout->addLayout(infoLayout);
 
@@ -92,7 +87,7 @@ T_About::T_About(QWidget* parent) : ElaWidget(parent), m_progressValue(0) {
     mainLayout->addLayout(buttonLayout);
 
     // Copyright
-    ElaText* copyrightText = new ElaText("版权所有 © 2024 Liniyous", this);
+    ElaText* copyrightText = new ElaText("版权所有 © 2024-present Max Qian", this);
     copyrightText->setTextPixelSize(12);
     copyrightText->setAlignment(Qt::AlignCenter);
     mainLayout->addWidget(copyrightText);
@@ -123,7 +118,7 @@ void T_About::addInfoText(QVBoxLayout* layout, const QString& label,
 }
 
 void T_About::onWebsiteClicked() {
-    QDesktopServices::openUrl(QUrl("https://www.example.com"));
+    QDesktopServices::openUrl(QUrl("https://github.com/ElementAstro/Lithium"));
 }
 
 void T_About::onUpdateClicked() {

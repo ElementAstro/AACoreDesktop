@@ -4,10 +4,12 @@
 #include <QMessageBox>
 #include <QShortcut>
 
+#include "ElaMenu.h"
+
 SystemTrayComponent::SystemTrayComponent(QObject *parent)
     : QObject(parent),
       trayIcon(new QSystemTrayIcon(this)),
-      trayMenu(new QMenu()),
+      trayMenu(new ElaMenu()),
       animationTimer(new QTimer(this)),
       currentIconIndex(0) {
     connect(trayIcon, &QSystemTrayIcon::activated, this,
@@ -37,8 +39,8 @@ void SystemTrayComponent::addMenuItem(const QString &itemName,
     actions.append(action);
 }
 
-QMenu *SystemTrayComponent::addSubMenu(const QString &menuName) {
-    QMenu *subMenu = new QMenu(menuName, trayMenu);
+ElaMenu *SystemTrayComponent::addSubMenu(const QString &menuName) {
+    ElaMenu *subMenu = new ElaMenu(menuName, trayMenu);
     trayMenu->addMenu(subMenu);
     return subMenu;
 }

@@ -1,11 +1,18 @@
 #include "T_SimpleSequencer.h"
 #include "T_BasePage.h"
 
-#include <qtablewidget.h>
 #include <QHeaderView>
+#include <QStandardItemModel>
+#include <QTableView>
+#include <QMessageBox>
 
-
+#include "ElaComboBox.h"
+#include "ElaLineEdit.h"
+#include "ElaPushButton.h"
+#include "ElaSpinBox.h"
 #include "ElaTableView.h"
+#include "ElaText.h"
+#include "ElaToggleSwitch.h"
 
 T_SimpleSequencerPage::T_SimpleSequencerPage(QWidget *parent)
     : T_BasePage(parent) {
@@ -109,7 +116,7 @@ void T_SimpleSequencerPage::createMiddleSection() {
     middleLayout->addWidget(sequenceModeCombo, 1, 1);
 
     middleLayout->addWidget(new QLabel("Estimated download time:"), 2, 0);
-    estimatedDownloadTimeEdit = new QLineEdit(middleWidget);
+    estimatedDownloadTimeEdit = new ElaLineEdit(middleWidget);
     estimatedDownloadTimeEdit->setReadOnly(true);
     middleLayout->addWidget(estimatedDownloadTimeEdit, 2, 1);
 
@@ -131,23 +138,25 @@ void T_SimpleSequencerPage::createBottomSection() {
     bottomWidget = new QWidget(this);
     QVBoxLayout *bottomLayout = new QVBoxLayout(bottomWidget);
 
-    targetTable = new QTableWidget(1, 8, bottomWidget);
-    targetTable->setHorizontalHeaderLabels({"Enabled", "Progress", "Total #",
-                                            "Time", "Type", "Filter", "Binning",
-                                            "Dither"});
+    targetTable = new ElaTableView(bottomWidget);
+    model = new QStandardItemModel(1, 8, this);
+    model->setHorizontalHeaderLabels({"Enabled", "Progress", "Total #", "Time",
+                                      "Type", "Filter", "Binning", "Dither"});
 
-    QTableWidgetItem *enabledItem = new QTableWidgetItem();
+    QStandardItem *enabledItem = new QStandardItem();
+    enabledItem->setCheckable(true);
     enabledItem->setCheckState(Qt::Checked);
-    targetTable->setItem(0, 0, enabledItem);
+    model->setItem(0, 0, enabledItem);
 
-    targetTable->setItem(0, 1, new QTableWidgetItem("0 / 1"));
-    targetTable->setItem(0, 2, new QTableWidgetItem("1"));
-    targetTable->setItem(0, 3, new QTableWidgetItem("1 s"));
-    targetTable->setItem(0, 4, new QTableWidgetItem("LIGHT"));
-    targetTable->setItem(0, 5, new QTableWidgetItem(""));
-    targetTable->setItem(0, 6, new QTableWidgetItem("1x1"));
-    targetTable->setItem(0, 7, new QTableWidgetItem("OFF"));
+    model->setItem(0, 1, new QStandardItem("0 / 1"));
+    model->setItem(0, 2, new QStandardItem("1"));
+    model->setItem(0, 3, new QStandardItem("1 s"));
+    model->setItem(0, 4, new QStandardItem("LIGHT"));
+    model->setItem(0, 5, new QStandardItem(""));
+    model->setItem(0, 6, new QStandardItem("1x1"));
+    model->setItem(0, 7, new QStandardItem("OFF"));
 
+    targetTable->setModel(model);
     targetTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     targetTable->verticalHeader()->setVisible(false);
 
@@ -210,6 +219,80 @@ void T_SimpleSequencerPage::createControlButtons() {
     buttonLayout->addWidget(startButton);
 
     mainLayout->addWidget(buttonWidget);
+
+    connect(backButton, &QPushButton::clicked, this, &T_SimpleSequencerPage::onBackButtonClicked);
+    connect(addButton, &QPushButton::clicked, this, &T_SimpleSequencerPage::onAddButtonClicked);
+    connect(deleteButton, &QPushButton::clicked, this, &T_SimpleSequencerPage::onDeleteButtonClicked);
+    connect(resetButton, &QPushButton::clicked, this, &T_SimpleSequencerPage::onResetButtonClicked);
+    connect(moveUpButton, &QPushButton::clicked, this, &T_SimpleSequencerPage::onMoveUpButtonClicked);
+    connect(moveDownButton, &QPushButton::clicked, this, &T_SimpleSequencerPage::onMoveDownButtonClicked);
+    connect(startButton, &QPushButton::clicked, this, &T_SimpleSequencerPage::onStartButtonClicked);
 }
 
 void T_SimpleSequencerPage::applyStyles() {}
+
+void T_SimpleSequencerPage::onBackButtonClicked() {
+    QMessageBox::information(this, "Back", "Back button clicked");
+}
+
+void T_SimpleSequencerPage::onAddButtonClicked() {
+    int rowCount = model->rowCount();
+    model->insertRow(rowCount);
+
+    QStandardItem *enabledItem = new QStandardItem();
+    enabledItem->setCheckable(true);
+    enabledItem->setCheckState(Qt::Checked);
+    model->setItem(rowCount, 0, enabledItem);
+
+    model->setItem(rowCount, 1, new QStandardItem("0 / 1"));
+    model->setItem(rowCount, 2, new QStandardItem("1"));
+    model->setItem(rowCount, 3, new QStandardItem("1 s"));
+    model->setItem(rowCount, 4, new QStandardItem("LIGHT"));
+    model->setItem(rowCount, 5, new QStandardItem(""));
+    model->setItem(rowCount, 6, new QStandardItem("1x1"));
+    model->setItem(rowCount, 7, new QStandardItem("OFF"));
+}
+
+void T_SimpleSequencerPage::onDeleteButtonClicked() {
+    QItemSelectionModel *selectionModel = targetTable->selectionModel();
+    QModelIndexList selectedRows = selectionModel->selectedRows();
+
+    for (const QModelIndex &index : selectedRows) {
+        model->removeRow(index.row());
+    }
+}
+
+void T_SimpleSequencerPage::onResetButtonClicked() {
+    model->removeRows(0, model->rowCount());
+    onAddButtonClicked(); // 添加一行默认数据
+}
+
+void T_SimpleSequencerPage::onMoveUpButtonClicked() {
+    QItemSelectionModel *selectionModel = targetTable->selectionModel();
+    QModelIndexList selectedRows = selectionModel->selectedRows();
+
+    if (selectedRows.isEmpty() || selectedRows.first().row() == 0) {
+        return;
+    }
+
+    int currentRow = selectedRows.first().row();
+    model->insertRow(currentRow - 1, model->takeRow(currentRow));
+    selectionModel->select(model->index(currentRow - 1, 0), QItemSelectionModel::Select);
+}
+
+void T_SimpleSequencerPage::onMoveDownButtonClicked() {
+    QItemSelectionModel *selectionModel = targetTable->selectionModel();
+    QModelIndexList selectedRows = selectionModel->selectedRows();
+
+    if (selectedRows.isEmpty() || selectedRows.first().row() == model->rowCount() - 1) {
+        return;
+    }
+
+    int currentRow = selectedRows.first().row();
+    model->insertRow(currentRow + 1, model->takeRow(currentRow));
+    selectionModel->select(model->index(currentRow + 1, 0), QItemSelectionModel::Select);
+}
+
+void T_SimpleSequencerPage::onStartButtonClicked() {
+    QMessageBox::information(this, "Start", "Start button clicked");
+}

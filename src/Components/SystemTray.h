@@ -2,11 +2,13 @@
 #define SYSTEMTRAYCOMPONENT_H
 
 #include <QAction>
-#include <QMenu>
+// #include <QMenu>
 #include <QObject>
 #include <QShortcut>
 #include <QSystemTrayIcon>
 #include <QTimer>
+
+class ElaMenu;
 
 class SystemTrayComponent : public QObject {
     Q_OBJECT
@@ -22,7 +24,7 @@ public:
                      const std::function<void()> &callback);
 
     // 添加子菜单
-    QMenu *addSubMenu(const QString &menuName);
+    ElaMenu *addSubMenu(const QString &menuName);
 
     // 动态更换托盘图标
     void setTrayIcon(const QString &iconPath);
@@ -48,7 +50,7 @@ public:
 
 private:
     QSystemTrayIcon *trayIcon;
-    QMenu *trayMenu;
+    ElaMenu *trayMenu;
     QList<QAction *> actions;
 
     QTimer *animationTimer;

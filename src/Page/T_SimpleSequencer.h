@@ -2,6 +2,7 @@
 #ifndef TARGETSETWIDGET_H
 #define TARGETSETWIDGET_H
 
+#include <qstandarditemmodel.h>
 #include <QBarSeries>
 #include <QBarSet>
 #include <QChart>
@@ -16,24 +17,42 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QSpinBox>
+#include <QStandardItemModel>
 #include <QTableWidget>
 #include <QVBoxLayout>
 #include <QValueAxis>
 #include <QWidget>
 
-#include "ElaComboBox.h"
-#include "ElaPushButton.h"
-#include "ElaSlider.h"
-#include "ElaSpinBox.h"
-#include "ElaText.h"
-#include "ElaToggleSwitch.h"
+
 #include "T_BasePage.h"
+
+class ElaLineEdit;
+class ElaTableView;
+class ElaComboBox;
+class ElaPushButton;
+class ElaToggleSwitch;
+class ElaSpinBox;
 
 class T_SimpleSequencerPage : public T_BasePage {
     Q_OBJECT
 
 public:
     explicit T_SimpleSequencerPage(QWidget *parent = nullptr);
+
+private slots:
+    void onBackButtonClicked();
+
+    void onAddButtonClicked();
+
+    void onDeleteButtonClicked();
+
+    void onResetButtonClicked();
+
+    void onMoveUpButtonClicked();
+
+    void onMoveDownButtonClicked();
+
+    void onStartButtonClicked();
 
 private:
     void setupUI();
@@ -49,6 +68,8 @@ private:
     QWidget *middleWidget;
     QWidget *bottomWidget;
 
+    QStandardItemModel *model;
+
     // Top section widgets
     ElaToggleSwitch *coolCameraSwitch;
     ElaToggleSwitch *unparkMountSwitch;
@@ -59,12 +80,12 @@ private:
     // Middle section widgets
     ElaSpinBox *delayStartSpinBox;
     ElaComboBox *sequenceModeCombo;
-    QLineEdit *estimatedDownloadTimeEdit;
+    ElaLineEdit *estimatedDownloadTimeEdit;
     QDateTimeEdit *estimatedFinishTimeEdit;
     QDateTimeEdit *estFinishTimeThisTargetEdit;
 
     // Bottom section widgets
-    QTableWidget *targetTable;
+    ElaTableView *targetTable;
     QChartView *chartView;
 
     // Control buttons
