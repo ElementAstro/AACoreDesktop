@@ -1,80 +1,89 @@
 #include "T_Guider.h"
 
-#include <QCheckBox>
-#include <QColorDialog>
-#include <QComboBox>
 #include <QGridLayout>
 #include <QHBoxLayout>
-#include <QLineEdit>
-#include <QPushButton>
 #include <QVBoxLayout>
 
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
 
-#include "C_InfoCard.h"
+#include "Components/C_InfoCard.h"
+
+#include "ElaColorDialog.h"
 #include "ElaComboBox.h"
 #include "ElaIconButton.h"
+#include "ElaLineEdit.h"
+#include "ElaPushButton.h"
 #include "ElaTabWidget.h"
 #include "ElaText.h"
 #include "ElaToggleSwitch.h"
+
 #include "T_Guider_Setting.h"
 
+namespace {
+constexpr int kSpacing20 = 20;
+constexpr int kFixedSize40 = 40;
+constexpr int kFixedSize30 = 30;
+constexpr int kMagicNumber100 = 100;
+constexpr double kMagicNumber01 = 0.1;
+}  // namespace
+
 T_GuiderPage::T_GuiderPage(QWidget *parent) : T_BasePage(parent) {
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setSpacing(20);
-    mainLayout->setContentsMargins(20, 20, 20, 20);
+    auto *mainLayout = new QVBoxLayout(this);
+    mainLayout->setSpacing(kSpacing20);
+    mainLayout->setContentsMargins(kSpacing20, kSpacing20, kSpacing20,
+                                   kSpacing20);
 
     // Top section
-    QHBoxLayout *topLayout = createTopLayout();
+    auto *topLayout = createTopLayout();
     mainLayout->addLayout(topLayout);
 
     // Create tab widget
-    ElaTabWidget *tabWidget = new ElaTabWidget(this);
+    auto *tabWidget = new ElaTabWidget(this);
 
     // Create and add "Information" tab
-    QWidget *infoTab = createInfoTab();
+    auto *infoTab = createInfoTab();
     tabWidget->addTab(infoTab, "信息");
 
     // Create and add "Control" tab
-    QWidget *controlTab = createControlTab();
+    auto *controlTab = createControlTab();
     tabWidget->addTab(controlTab, "控制");
 
     // Create and add "Settings" tab
-    QWidget *settingsTab = createSettingsTab();
+    auto *settingsTab = createSettingsTab();
     tabWidget->addTab(settingsTab, "设置");
 
     mainLayout->addWidget(tabWidget);
 
-    QWidget *centralWidget = new QWidget(this);
+    auto *centralWidget = new QWidget(this);
     centralWidget->setWindowTitle("导星器面板");
-    QVBoxLayout *centerLayout = new QVBoxLayout(centralWidget);
+    auto *centerLayout = new QVBoxLayout(centralWidget);
     centerLayout->addLayout(mainLayout);
     centerLayout->setContentsMargins(0, 0, 0, 0);
     addCentralWidget(centralWidget, true, true, 0);
 
     _phd2SetupDialog = new T_PHD2SetupDialog(this);
     _phd2SetupDialog->hide();
-    connect(_settingButton, &QPushButton::clicked, _phd2SetupDialog,
+    connect(_settingButton, &ElaPushButton::clicked, _phd2SetupDialog,
             &T_PHD2SetupDialog::show);
 }
 
-QHBoxLayout *T_GuiderPage::createTopLayout() {
-    QHBoxLayout *topLayout = new QHBoxLayout();
+auto T_GuiderPage::createTopLayout() -> QHBoxLayout * {
+    auto *topLayout = new QHBoxLayout();
 
-    ElaComboBox *guiderCombo = new ElaComboBox(this);
+    auto *guiderCombo = new ElaComboBox(this);
     guiderCombo->addItem("PHD2");
 
     auto createIconButton = [this](ElaIconType::IconName icon) {
-        ElaIconButton *button = new ElaIconButton(icon, this);
-        button->setFixedSize(40, 40);
+        auto *button = new ElaIconButton(icon, this);
+        button->setFixedSize(kFixedSize40, kFixedSize40);
         return button;
     };
 
     _settingButton = createIconButton(ElaIconType::Gears);
-    ElaIconButton *refreshButton = createIconButton(ElaIconType::ArrowsRotate);
-    ElaIconButton *powerButton = createIconButton(ElaIconType::PowerOff);
+    auto *refreshButton = createIconButton(ElaIconType::ArrowsRotate);
+    auto *powerButton = createIconButton(ElaIconType::PowerOff);
 
     topLayout->addWidget(guiderCombo, 1);
     topLayout->addWidget(_settingButton);
@@ -84,49 +93,49 @@ QHBoxLayout *T_GuiderPage::createTopLayout() {
     return topLayout;
 }
 
-QWidget *T_GuiderPage::createInfoTab() {
-    QWidget *infoWidget = new QWidget(this);
-    QVBoxLayout *layout = new QVBoxLayout(infoWidget);
+auto T_GuiderPage::createInfoTab() -> QWidget * {
+    auto *infoWidget = new QWidget(this);
+    auto *layout = new QVBoxLayout(infoWidget);
 
     layout->addWidget(new InfoCard("连接状态", "已连接", this));
     layout->addWidget(new InfoCard("状态", "循环中", this));
     layout->addWidget(new InfoCard("像素比例", "1.31 arcsec/px", this));
 
     // 添加图表
-    QChartView *chartView = createGuideChart();
+    auto *chartView = createGuideChart();
     layout->addWidget(chartView);
 
     layout->addStretch();
     return infoWidget;
 }
 
-QWidget *T_GuiderPage::createControlTab() {
-    QWidget *controlWidget = new QWidget(this);
-    QVBoxLayout *layout = new QVBoxLayout(controlWidget);
+auto T_GuiderPage::createControlTab() -> QWidget * {
+    auto *controlWidget = new QWidget(this);
+    auto *layout = new QVBoxLayout(controlWidget);
 
-    QHBoxLayout *graphShowLayout = new QHBoxLayout();
+    auto *graphShowLayout = new QHBoxLayout();
     graphShowLayout->addWidget(new ElaText("显示修正图", this));
     graphShowLayout->addWidget(new ElaToggleSwitch(this));
     layout->addLayout(graphShowLayout);
 
     // RA颜色选择
-    QHBoxLayout *raColorLayout = new QHBoxLayout();
+    auto *raColorLayout = new QHBoxLayout();
     raColorLayout->addWidget(new ElaText("RA图形颜色", this));
-    QPushButton *raColorButton = new QPushButton(this);
-    raColorButton->setFixedSize(30, 30);
+    auto *raColorButton = new ElaPushButton(this);
+    raColorButton->setFixedSize(kFixedSize30, kFixedSize30);
     raColorButton->setStyleSheet("background-color: blue;");
-    connect(raColorButton, &QPushButton::clicked, this,
+    connect(raColorButton, &ElaPushButton::clicked, this,
             &T_GuiderPage::onRAColorButtonClicked);
     raColorLayout->addWidget(raColorButton);
     layout->addLayout(raColorLayout);
 
     // Dec颜色选择
-    QHBoxLayout *decColorLayout = new QHBoxLayout();
+    auto *decColorLayout = new QHBoxLayout();
     decColorLayout->addWidget(new ElaText("Dec图形颜色", this));
-    QPushButton *decColorButton = new QPushButton(this);
-    decColorButton->setFixedSize(30, 30);
+    auto *decColorButton = new ElaPushButton(this);
+    decColorButton->setFixedSize(kFixedSize30, kFixedSize30);
     decColorButton->setStyleSheet("background-color: red;");
-    connect(decColorButton, &QPushButton::clicked, this,
+    connect(decColorButton, &ElaPushButton::clicked, this,
             &T_GuiderPage::onDecColorButtonClicked);
     decColorLayout->addWidget(decColorButton);
     layout->addLayout(decColorLayout);
@@ -135,16 +144,20 @@ QWidget *T_GuiderPage::createControlTab() {
     return controlWidget;
 }
 
-QWidget *T_GuiderPage::createSettingsTab() {
-    QWidget *settingsWidget = new QWidget(this);
-    QVBoxLayout *layout = new QVBoxLayout(settingsWidget);
+auto T_GuiderPage::createSettingsTab() -> QWidget * {
+    auto *settingsWidget = new QWidget(this);
+    auto *layout = new QVBoxLayout(settingsWidget);
 
     auto addSettingRow = [this, layout](
                              const QString &label, const QString &value,
                              const QString &unit, bool hasToggle = false) {
-        QHBoxLayout *rowLayout = new QHBoxLayout();
-        rowLayout->addWidget(new ElaText(label, this));
-        rowLayout->addWidget(new QLineEdit(value, this));
+        auto *rowLayout = new QHBoxLayout();
+        auto *labelWidget = new ElaText(label, this);
+        labelWidget->setTextPixelSize(15);
+        rowLayout->addWidget(labelWidget);
+        auto *settingEdit = new ElaLineEdit(this);
+        settingEdit->setText(value);
+        rowLayout->addWidget(settingEdit);
         rowLayout->addWidget(new ElaText(unit, this));
         if (hasToggle) {
             rowLayout->addWidget(new ElaToggleSwitch(this));
@@ -157,9 +170,9 @@ QWidget *T_GuiderPage::createSettingsTab() {
     addSettingRow("稳定超时", "40", "s");
     addSettingRow("导星开始超时", "300", "s");
 
-    QHBoxLayout *profileLayout = new QHBoxLayout();
+    auto *profileLayout = new QHBoxLayout();
     profileLayout->addWidget(new ElaText("PHD2配置", this));
-    ElaComboBox *profileCombo = new ElaComboBox(this);
+    auto *profileCombo = new ElaComboBox(this);
     profileCombo->addItem("test");
     profileLayout->addWidget(profileCombo);
     layout->addLayout(profileLayout);
@@ -173,30 +186,30 @@ QWidget *T_GuiderPage::createSettingsTab() {
     return settingsWidget;
 }
 
-QChartView *T_GuiderPage::createGuideChart() {
-    QChart *chart = new QChart();
+auto T_GuiderPage::createGuideChart() -> QChartView * {
+    auto *chart = new QChart();
     chart->setTitle("导星图");
 
-    QLineSeries *raSeries = new QLineSeries();
+    auto *raSeries = new QLineSeries();
     raSeries->setName("RA修正");
-    QLineSeries *decSeries = new QLineSeries();
+    auto *decSeries = new QLineSeries();
     decSeries->setName("Dec修正");
 
-    for (int i = 0; i < 100; ++i) {
-        raSeries->append(i, qSin(i * 0.1));
-        decSeries->append(i, qCos(i * 0.1));
+    for (int i = 0; i < kMagicNumber100; ++i) {
+        raSeries->append(i, qSin(i * kMagicNumber01));
+        decSeries->append(i, qCos(i * kMagicNumber01));
     }
 
     chart->addSeries(raSeries);
     chart->addSeries(decSeries);
 
-    QValueAxis *axisX = new QValueAxis();
+    auto *axisX = new QValueAxis();
     axisX->setTitleText("时间");
     chart->addAxis(axisX, Qt::AlignBottom);
     raSeries->attachAxis(axisX);
     decSeries->attachAxis(axisX);
 
-    QValueAxis *axisY = new QValueAxis();
+    auto *axisY = new QValueAxis();
     axisY->setTitleText("偏差");
     chart->addAxis(axisY, Qt::AlignLeft);
     raSeries->attachAxis(axisY);
@@ -204,32 +217,32 @@ QChartView *T_GuiderPage::createGuideChart() {
 
     chart->setTheme(QChart::ChartThemeDark);
 
-    QChartView *chartView = new QChartView(chart);
+    auto *chartView = new QChartView(chart);
     chartView->setRenderHint(QPainter::Antialiasing);
 
     return chartView;
 }
 
 void T_GuiderPage::onRAColorButtonClicked() {
-    QColor color = QColorDialog::getColor(Qt::blue, this, "选择RA图形颜色");
-    if (color.isValid()) {
-        QPushButton *button = qobject_cast<QPushButton *>(sender());
-        if (button) {
-            button->setStyleSheet(
-                QString("background-color: %1;").arg(color.name()));
+    ElaColorDialog colorDialog(this);
+    colorDialog.setCurrentColor(Qt::blue);
+    if (colorDialog.exec() == QDialog::Accepted) {
+        QColor color = colorDialog.getCurrentColor();
+        if (color.isValid()) {
+            auto *button = qobject_cast<ElaPushButton *>(sender());
+            // 更新图表RA线条颜色的逻辑可以在这里添加
         }
-        // 更新图表RA线条颜色的逻辑可以在这里添加
     }
 }
 
 void T_GuiderPage::onDecColorButtonClicked() {
-    QColor color = QColorDialog::getColor(Qt::red, this, "选择Dec图形颜色");
-    if (color.isValid()) {
-        QPushButton *button = qobject_cast<QPushButton *>(sender());
-        if (button) {
-            button->setStyleSheet(
-                QString("background-color: %1;").arg(color.name()));
+    ElaColorDialog colorDialog(this);
+    colorDialog.setCurrentColor(Qt::red);
+    if (colorDialog.exec() == QDialog::Accepted) {
+        QColor color = colorDialog.getCurrentColor();
+        if (color.isValid()) {
+            auto *button = qobject_cast<ElaPushButton *>(sender());
+            // 更新图表Dec线条颜色的逻辑可以在这里添加
         }
-        // 更新图表Dec线条颜色的逻辑可以在这里添加
     }
 }

@@ -1,7 +1,9 @@
 #include "T_Guider_Setting.h"
+
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QVBoxLayout>
+
 #include "ElaCheckBox.h"
 #include "ElaLineEdit.h"
 #include "ElaMessageButton.h"
@@ -10,8 +12,44 @@
 #include "ElaText.h"
 #include "ElaWidget.h"
 
+namespace {
+constexpr int kMaxPortNumber = 65535;
+constexpr int kDefaultPortNumber = 4400;
+constexpr int kMaxInstanceNumber = 10;
+constexpr int kMaxDitherPixels = 100;
+constexpr int kDefaultDitherPixels = 5;
+constexpr double kMinSettlePixelTolerance = 0.1;
+constexpr double kMaxSettlePixelTolerance = 10.0;
+constexpr double kDefaultSettlePixelTolerance = 1.5;
+constexpr int kMaxSettleTime = 100;
+constexpr int kDefaultSettleTime = 10;
+constexpr int kMaxSettleTimeout = 300;
+constexpr int kDefaultSettleTimeout = 40;
+constexpr int kMaxGuidingStartTimeout = 1000;
+constexpr int kDefaultGuidingStartTimeout = 300;
+constexpr int kMaxRoiPercentage = 100;
+constexpr int kDefaultRoiPercentage = 100;
+constexpr int kDescriptionTextPixelSize = 15;
+constexpr int kTopLayoutSpacing = 10;
+constexpr int kTopLayoutMarginTop = 25;
+}  // namespace
 
-T_PHD2SetupDialog::T_PHD2SetupDialog(QWidget *parent) : ElaWidget(parent) {
+T_PHD2SetupDialog::T_PHD2SetupDialog(QWidget *parent)
+    : ElaWidget(parent),
+      phd2PathEdit(nullptr),
+      serverUrlEdit(nullptr),
+      serverPortSpin(nullptr),
+      instanceNumberSpin(nullptr),
+      ditherPixelsSpin(nullptr),
+      ditherRaOnlyCheck(nullptr),
+      settlePixelToleranceSpin(nullptr),
+      minSettleTimeSpin(nullptr),
+      settleTimeoutSpin(nullptr),
+      guidingStartRetryCheck(nullptr),
+      guidingStartTimeoutSpin(nullptr),
+      roiPercentageSpin(nullptr),
+      okButton(nullptr),
+      cancelButton(nullptr) {
     setupUi();
     setWindowTitle("PHD2 Setup");
     this->setIsFixedSize(true);
@@ -19,14 +57,14 @@ T_PHD2SetupDialog::T_PHD2SetupDialog(QWidget *parent) : ElaWidget(parent) {
 }
 
 void T_PHD2SetupDialog::setupUi() {
-    auto mainLayout = new QVBoxLayout(this);
+    auto *mainLayout = new QVBoxLayout(this);
 
     // Add a top layout with a description
-    auto topLayout = createTopLayout("Configure PHD2 settings for guiding");
+    auto *topLayout = createTopLayout("Configure PHD2 settings for guiding");
     mainLayout->addLayout(topLayout);
 
-    auto scrollArea = new ElaScrollPageArea(this);
-    auto formLayout = new QFormLayout(scrollArea);
+    auto *scrollArea = new ElaScrollPageArea(this);
+    auto *formLayout = new QFormLayout(scrollArea);
 
     // Replace QLineEdit with ElaLineEdit
     phd2PathEdit = new ElaLineEdit(this);
@@ -39,19 +77,19 @@ void T_PHD2SetupDialog::setupUi() {
 
     // Replace QSpinBox with ElaSpinBox
     serverPortSpin = new ElaSpinBox(this);
-    serverPortSpin->setRange(1, 65535);
-    serverPortSpin->setValue(4400);
+    serverPortSpin->setRange(1, kMaxPortNumber);
+    serverPortSpin->setValue(kDefaultPortNumber);
     formLayout->addRow(new ElaText("PHD2 server port:", this), serverPortSpin);
 
     instanceNumberSpin = new ElaSpinBox(this);
-    instanceNumberSpin->setRange(1, 10);
+    instanceNumberSpin->setRange(1, kMaxInstanceNumber);
     instanceNumberSpin->setValue(1);
     formLayout->addRow(new ElaText("PHD2 instance number:", this),
                        instanceNumberSpin);
 
     ditherPixelsSpin = new ElaSpinBox(this);
-    ditherPixelsSpin->setRange(0, 100);
-    ditherPixelsSpin->setValue(5);
+    ditherPixelsSpin->setRange(0, kMaxDitherPixels);
+    ditherPixelsSpin->setValue(kDefaultDitherPixels);
     ditherPixelsSpin->setSuffix(" px");
     formLayout->addRow(new ElaText("Dither pixels:", this), ditherPixelsSpin);
 
@@ -60,22 +98,23 @@ void T_PHD2SetupDialog::setupUi() {
     formLayout->addRow("", ditherRaOnlyCheck);
 
     settlePixelToleranceSpin = new ElaSpinBox(this);
-    settlePixelToleranceSpin->setRange(0.1, 10.0);
-    settlePixelToleranceSpin->setValue(1.5);
+    settlePixelToleranceSpin->setRange(kMinSettlePixelTolerance,
+                                       kMaxSettlePixelTolerance);
+    settlePixelToleranceSpin->setValue(kDefaultSettlePixelTolerance);
     settlePixelToleranceSpin->setSuffix(" px");
     formLayout->addRow(new ElaText("Settle pixel tolerance:", this),
                        settlePixelToleranceSpin);
 
     minSettleTimeSpin = new ElaSpinBox(this);
-    minSettleTimeSpin->setRange(1, 100);
-    minSettleTimeSpin->setValue(10);
+    minSettleTimeSpin->setRange(1, kMaxSettleTime);
+    minSettleTimeSpin->setValue(kDefaultSettleTime);
     minSettleTimeSpin->setSuffix(" s");
     formLayout->addRow(new ElaText("Minimum settle time:", this),
                        minSettleTimeSpin);
 
     settleTimeoutSpin = new ElaSpinBox(this);
-    settleTimeoutSpin->setRange(1, 300);
-    settleTimeoutSpin->setValue(40);
+    settleTimeoutSpin->setRange(1, kMaxSettleTimeout);
+    settleTimeoutSpin->setValue(kDefaultSettleTimeout);
     settleTimeoutSpin->setSuffix(" s");
     formLayout->addRow(new ElaText("Settle timeout:", this), settleTimeoutSpin);
 
@@ -83,15 +122,15 @@ void T_PHD2SetupDialog::setupUi() {
     formLayout->addRow("", guidingStartRetryCheck);
 
     guidingStartTimeoutSpin = new ElaSpinBox(this);
-    guidingStartTimeoutSpin->setRange(1, 1000);
-    guidingStartTimeoutSpin->setValue(300);
+    guidingStartTimeoutSpin->setRange(1, kMaxGuidingStartTimeout);
+    guidingStartTimeoutSpin->setValue(kDefaultGuidingStartTimeout);
     guidingStartTimeoutSpin->setSuffix(" s");
     formLayout->addRow(new ElaText("Guiding start timeout:", this),
                        guidingStartTimeoutSpin);
 
     roiPercentageSpin = new ElaSpinBox(this);
-    roiPercentageSpin->setRange(1, 100);
-    roiPercentageSpin->setValue(100);
+    roiPercentageSpin->setRange(1, kMaxRoiPercentage);
+    roiPercentageSpin->setValue(kDefaultRoiPercentage);
     roiPercentageSpin->setSuffix(" %");
     formLayout->addRow(new ElaText("ROI percentage to find guide star:", this),
                        roiPercentageSpin);
@@ -104,7 +143,7 @@ void T_PHD2SetupDialog::setupUi() {
     cancelButton = new ElaMessageButton("Cancel", this);
     okButton->setAutoDefault(true);
     cancelButton->setAutoDefault(true);
-    auto buttonBox = new QDialogButtonBox(this);
+    auto *buttonBox = new QDialogButtonBox(this);
     buttonBox->addButton(okButton, QDialogButtonBox::AcceptRole);
     buttonBox->addButton(cancelButton, QDialogButtonBox::RejectRole);
     mainLayout->addWidget(buttonBox);
@@ -115,13 +154,14 @@ void T_PHD2SetupDialog::setupUi() {
             &T_PHD2SetupDialog::reject);
 }
 
-QVBoxLayout *T_PHD2SetupDialog::createTopLayout(const QString &description) {
-    QVBoxLayout *topLayout = new QVBoxLayout();
-    ElaText *descriptionText = new ElaText(description, this);
-    descriptionText->setTextPixelSize(15);
+auto T_PHD2SetupDialog::createTopLayout(const QString &description)
+    -> QVBoxLayout * {
+    auto *topLayout = new QVBoxLayout();
+    auto *descriptionText = new ElaText(description, this);
+    descriptionText->setTextPixelSize(kDescriptionTextPixelSize);
     topLayout->addWidget(descriptionText);
-    topLayout->addSpacing(10);
-    topLayout->setContentsMargins(0, 25, 0, 0);
+    topLayout->addSpacing(kTopLayoutSpacing);
+    topLayout->setContentsMargins(0, kTopLayoutMarginTop, 0, 0);
     return topLayout;
 }
 

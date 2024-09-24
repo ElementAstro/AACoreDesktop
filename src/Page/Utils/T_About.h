@@ -17,6 +17,8 @@ private slots:
     void onWebsiteClicked();
     void onUpdateClicked();
     void updateProgressBar();
+    void onHelpClicked();
+    void onFeedbackClicked();
 
 private:
     void addInfoText(QVBoxLayout* layout, const QString& label,

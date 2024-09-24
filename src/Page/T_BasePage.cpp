@@ -3,47 +3,57 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 
+#include <QDate>
+
 #include "ElaMenu.h"
 #include "ElaText.h"
 #include "ElaTheme.h"
 #include "ElaToolButton.h"
+
+namespace {
+constexpr int kTextPixelSize11 = 11;
+constexpr int kTextPixelSize13 = 13;
+constexpr int kFixedSize35 = 35;
+constexpr int kSpacing5 = 5;
+constexpr int kSpacing15 = 15;
+}  // namespace
+
 T_BasePage::T_BasePage(QWidget* parent) : ElaScrollPage(parent) {}
 
-T_BasePage::~T_BasePage() {}
+T_BasePage::~T_BasePage() = default;
 
-QVBoxLayout* T_BasePage::createTopLayout(QString desText) {
+auto T_BasePage::createTopLayout(const QString& desText) -> QVBoxLayout* {
     // 顶部元素
-    ElaText* subTitleText = new ElaText(this);
+    auto* subTitleText = new ElaText(this);
     subTitleText->setText("https://github.com/Liniyous/ElaWidgetTools");
     subTitleText->setTextInteractionFlags(Qt::TextSelectableByMouse);
-    subTitleText->setTextPixelSize(11);
+    subTitleText->setTextPixelSize(kTextPixelSize11);
 
-    ElaToolButton* documentationButton = new ElaToolButton(this);
-    documentationButton->setFixedHeight(35);
+    auto* documentationButton = new ElaToolButton(this);
+    documentationButton->setFixedHeight(kFixedSize35);
     documentationButton->setIsTransparent(false);
     documentationButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    //_toolButton->setPopupMode(QToolButton::MenuButtonPopup);
     documentationButton->setText("Documentation");
     documentationButton->setElaIcon(ElaIconType::FileDoc);
-    ElaMenu* documentationMenu = new ElaMenu(this);
+    auto* documentationMenu = new ElaMenu(this);
     documentationMenu->addElaIconAction(ElaIconType::CardsBlank, "CardsBlank");
     documentationMenu->addElaIconAction(ElaIconType::EarthAmericas,
                                         "EarthAmericas");
     documentationButton->setMenu(documentationMenu);
 
-    ElaToolButton* sourceButton = new ElaToolButton(this);
-    sourceButton->setFixedHeight(35);
+    auto* sourceButton = new ElaToolButton(this);
+    sourceButton->setFixedHeight(kFixedSize35);
     sourceButton->setIsTransparent(false);
     sourceButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     sourceButton->setText("Source");
     sourceButton->setElaIcon(ElaIconType::NfcSymbol);
-    ElaMenu* sourceMenu = new ElaMenu(this);
+    auto* sourceMenu = new ElaMenu(this);
     sourceMenu->addElaIconAction(ElaIconType::FireBurner, "FireBurner");
     sourceMenu->addElaIconAction(ElaIconType::Galaxy, "Galaxy~~~~");
     sourceButton->setMenu(sourceMenu);
 
-    ElaToolButton* themeButton = new ElaToolButton(this);
-    themeButton->setFixedSize(35, 35);
+    auto* themeButton = new ElaToolButton(this);
+    themeButton->setFixedSize(kFixedSize35, kFixedSize35);
     themeButton->setIsTransparent(false);
     themeButton->setElaIcon(ElaIconType::MoonStars);
     connect(themeButton, &ElaToolButton::clicked, this, [=]() {
@@ -52,24 +62,24 @@ QVBoxLayout* T_BasePage::createTopLayout(QString desText) {
                                  : ElaThemeType::Light);
     });
 
-    QHBoxLayout* buttonLayout = new QHBoxLayout();
+    auto* buttonLayout = new QHBoxLayout();
     buttonLayout->addWidget(documentationButton);
-    buttonLayout->addSpacing(5);
+    buttonLayout->addSpacing(kSpacing5);
     buttonLayout->addWidget(sourceButton);
     buttonLayout->addStretch();
     buttonLayout->addWidget(themeButton);
-    buttonLayout->addSpacing(15);
+    buttonLayout->addSpacing(kSpacing15);
 
-    ElaText* descText = new ElaText(this);
+    auto* descText = new ElaText(this);
     descText->setText(desText);
-    descText->setTextPixelSize(13);
+    descText->setTextPixelSize(kTextPixelSize13);
 
-    QVBoxLayout* topLayout = new QVBoxLayout();
+    auto* topLayout = new QVBoxLayout();
     topLayout->setContentsMargins(0, 0, 0, 0);
     topLayout->addWidget(subTitleText);
-    topLayout->addSpacing(5);
+    topLayout->addSpacing(kSpacing5);
     topLayout->addLayout(buttonLayout);
-    topLayout->addSpacing(5);
+    topLayout->addSpacing(kSpacing5);
     topLayout->addWidget(descText);
     return topLayout;
 }

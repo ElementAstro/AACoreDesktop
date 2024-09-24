@@ -9,7 +9,6 @@
 #include <QVBoxLayout>
 
 #include "ElaCheckBox.h"
-#include "ElaComboBox.h"
 #include "ElaLineEdit.h"
 #include "ElaPlainTextEdit.h"
 #include "ElaPushButton.h"

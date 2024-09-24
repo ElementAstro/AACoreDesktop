@@ -14,12 +14,17 @@ T_I18NPage::T_I18NPage(QWidget *parent) : T_BasePage(parent) {
     applyButton = new ElaPushButton("Apply", this);
 
     // 创建布局
-    layout = new QVBoxLayout(this);
-    layout->addWidget(languageComboBox);
-    layout->addWidget(applyButton);
+    auto *mainLayout = new QVBoxLayout(this);
+    auto *buttonLayout = new QHBoxLayout();
+
+    // 添加语言选择框和按钮到布局
+    mainLayout->addWidget(languageComboBox);
+    buttonLayout->addStretch();
+    buttonLayout->addWidget(applyButton);
+    mainLayout->addLayout(buttonLayout);
 
     // 设置布局到主窗口
-    setLayout(layout);
+    setLayout(mainLayout);
 
     // 加载语言列表和样式
     loadLanguages();
@@ -30,13 +35,13 @@ T_I18NPage::T_I18NPage(QWidget *parent) : T_BasePage(parent) {
 
     QWidget *centralWidget = new QWidget(this);
     centralWidget->setWindowTitle("I18n");
-    QVBoxLayout *centerLayout = new QVBoxLayout(centralWidget);
-    centerLayout->addLayout(layout);
+    auto *centerLayout = new QVBoxLayout(centralWidget);
+    centerLayout->addLayout(mainLayout);
     centerLayout->setContentsMargins(0, 0, 0, 0);
     addCentralWidget(centralWidget, true, true, 0);
 }
 
-T_I18NPage::~T_I18NPage() {}
+T_I18NPage::~T_I18NPage() = default;
 
 // 加载语言列表
 void T_I18NPage::loadLanguages() {

@@ -11,7 +11,7 @@ public:
     ~T_BasePage();
 
 protected:
-    QVBoxLayout* createTopLayout(QString desText);
+    QVBoxLayout* createTopLayout(const QString &desText);
 };
 
 #endif  // T_BASEPAGE_H

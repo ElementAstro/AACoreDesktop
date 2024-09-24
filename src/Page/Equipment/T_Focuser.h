@@ -1,13 +1,13 @@
 #ifndef T_FOCUSERPAGE_H
 #define T_FOCUSERPAGE_H
 
-#include "ElaToggleSwitch.h"
 #include "T_BasePage.h"
 
 class QVBoxLayout;
 class QChartView;
 class QGridLayout;
 class QGroupBox;
+
 class ElaToggleSwitch;
 class T_FocuserPage : public T_BasePage {
     Q_OBJECT

@@ -15,6 +15,13 @@ find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets Charts Sql WebSockets Xml 
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Charts Sql WebSockets Xml SerialPort)
 
 find_package(libssh REQUIRED)
+
+find_package(OpenCV REQUIRED)
+
+message(STATUS "OpenCV version: ${OpenCV_VERSION}")
+message(STATUS "OpenCV include dir: ${OpenCV_INCLUDE_DIRS}")
+message(STATUS "OpenCV libraries: ${OpenCV_LIBS}")
+
 include_directories(${LIBSSH_INCLUDE_DIRS})
 
 file(GLOB_RECURSE CPP_FILES  *.cpp *.h)
@@ -77,6 +84,11 @@ target_link_libraries(AACoreDesktop PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${Q
 Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::WebSockets Qt${QT_VERSION_MAJOR}::Xml Qt${QT_VERSION_MAJOR}::SerialPort
     elawidgettools  ssh
 )
+# 包含 OpenCV 头文件
+target_include_directories(AACoreDesktop PRIVATE ${OpenCV_INCLUDE_DIRS})
+
+# 链接 OpenCV 库
+target_link_libraries(AACoreDesktop PRIVATE ${OpenCV_LIBS})
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an

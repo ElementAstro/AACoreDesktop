@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include <qobject.h>
 
 #include <QDebug>
 #include <QGraphicsView>
@@ -17,27 +18,42 @@
 #include "ElaStatusBar.h"
 #include "ElaText.h"
 
-#include "Page/T_Camera.h"
-#include "Page/T_ConfigPanel.h"
-#include "Page/T_DeviceConnection.h"
-#include "Page/T_FilterWheel.h"
-#include "Page/T_Focuser.h"
-#include "Page/T_Guider.h"
-#include "Page/T_Home.h"
-#include "Page/T_I18n.h"
-#include "Page/T_LogPanel.h"
-#include "Page/T_Process.hpp"
-#include "Page/T_SerialConfig.h"
-#include "Page/T_SerialDebug.h"
-#include "Page/T_Setting.h"
-#include "Page/T_SimpleSequencer.h"
-#include "Page/T_Software.hpp"
-#include "Page/T_SystemInfo.h"
-#include "Page/T_TargetSearch.h"
-#include "Page/T_Telescope.h"
-#include "Page/T_Terminal.h"
+#include "Page/Config/T_ConfigPanel.h"
 
-#include "T_About.h"
+#include "Page/Debug/T_HttpClient.h"
+#include "Page/Debug/T_TcpClient.h"
+#include "Page/Debug/T_WebSocketClient.h"
+
+#include "Page/Equipment/T_Camera.h"
+#include "Page/Equipment/T_DeviceConnection.h"
+#include "Page/Equipment/T_FilterWheel.h"
+#include "Page/Equipment/T_Focuser.h"
+#include "Page/Equipment/T_Guider.h"
+#include "Page/Equipment/T_Switch.h"
+#include "Page/Equipment/T_Telescope.h"
+
+#include "Page/Image/T_ImageViewer.h"
+
+#include "Page/Log/T_LogPanel.h"
+
+#include "Page/Sequencer/T_SimpleSequencer.h"
+
+#include "Page/Serial/T_SerialConfig.h"
+#include "Page/Serial/T_SerialDebug.h"
+
+#include "Page/Skymap/T_TargetSearch.h"
+
+#include "Page/System/T_Process.hpp"
+#include "Page/System/T_Software.hpp"
+#include "Page/System/T_SystemInfo.h"
+#include "Page/System/T_Terminal.h"
+
+#include "Page/Utils/T_About.h"
+#include "Page/Utils/T_I18n.h"
+
+#include "Page/T_Home.h"
+
+#include "Page/T_Setting.h"
 
 namespace {
 const int WindowWidth = 1200;
@@ -131,6 +147,10 @@ void MainWindow::initContent() {
     _logPanelPage = new T_LogPanelPage(this);
     _settingPage = new T_Setting(this);
     _terminalPage = new T_TerminalPage(this);
+    _imageViewerPage = new T_ImageViewerPage(this);
+    _httpClientPage = new T_HttpClientPage(this);
+    _webSocketClientPage = new T_WebSocketClientPage(this);
+    _tcpClientPage = new T_TcpClientPage(this);
 
     // GraphicsView
     auto scene = new ElaGraphicsScene(this);
@@ -173,6 +193,8 @@ void MainWindow::initContent() {
     addPageNode("SerialConfig", _serialConfigPage, ElaIconType::GearComplex);
     addPageNode("SerialDebug", _serialDebugPage, ElaIconType::Plug);
 
+    addPageNode("ImageViewer", _imageViewerPage, ElaIconType::Image);
+
     QString systemKey;
     addExpanderNode("System", systemKey, ElaIconType::SolarSystem);
     addPageNode("Software", _softwarePage, systemKey, ElaIconType::Grid2);
@@ -183,6 +205,14 @@ void MainWindow::initContent() {
     addPageNode("Config", _configPanel, ElaIconType::GearComplex);
 
     addPageNode("Log", _logPanelPage, ElaIconType::List);
+
+    QString debugKey;
+    addExpanderNode("Debug", debugKey, ElaIconType::Bug);
+    addPageNode("HttpClient", _httpClientPage, debugKey,
+                ElaIconType::NetworkWired);
+    addPageNode("TcpClient", _tcpClientPage, debugKey, ElaIconType::Plug);
+    addPageNode("WebSocketClient", _webSocketClientPage, debugKey,
+                ElaIconType::Cloud);
 
     addFooterNode("About", nullptr, _aboutKey, 0, ElaIconType::User);
     auto *aboutPage = new T_About();

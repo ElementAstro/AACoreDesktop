@@ -35,9 +35,9 @@ T_ConfigPanel::T_ConfigPanel(QWidget *parent)
     m_keyValueModel->setHorizontalHeaderLabels({"Key", "Value"});
     m_keyValueTableView->horizontalHeader()->setStretchLastSection(true);
 
-    QWidget *centralWidget = new QWidget(this);
+    auto *centralWidget = new QWidget(this);
     centralWidget->setWindowTitle("配置面板");
-    QVBoxLayout *centerLayout = new QVBoxLayout(centralWidget);
+    auto *centerLayout = new QVBoxLayout(centralWidget);
     centerLayout->addLayout(mainLayout);
     centerLayout->addStretch();
     centerLayout->setContentsMargins(0, 0, 0, 0);
@@ -84,8 +84,8 @@ void T_ConfigPanel::loadStoreData(const QString &storeName) {
     if (store) {
         int row = 0;
         for (auto it = store->constBegin(); it != store->constEnd(); ++it) {
-            QStandardItem *keyItem = new QStandardItem(it.key());
-            QStandardItem *valueItem = new QStandardItem(it.value().toString());
+            auto *keyItem = new QStandardItem(it.key());
+            auto *valueItem = new QStandardItem(it.value().toString());
             m_keyValueModel->setItem(row, 0, keyItem);
             m_keyValueModel->setItem(row, 1, valueItem);
             ++row;

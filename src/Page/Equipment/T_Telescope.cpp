@@ -9,7 +9,7 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
-#include "C_InfoCard.h"
+#include "Components/C_InfoCard.h"
 #include "ElaComboBox.h"
 #include "ElaIconButton.h"
 #include "ElaSlider.h"

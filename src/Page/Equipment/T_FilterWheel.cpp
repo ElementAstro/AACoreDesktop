@@ -2,65 +2,71 @@
 
 #include <QGridLayout>
 #include <QHBoxLayout>
-#include <QLineEdit>
-#include <QPushButton>
 #include <QVBoxLayout>
 
-#include "C_InfoCard.h"
+#include "Components/C_InfoCard.h"
 #include "ElaComboBox.h"
 #include "ElaIconButton.h"
+#include "ElaLineEdit.h"
+#include "ElaPushButton.h"
 #include "ElaTabWidget.h"
 #include "ElaText.h"
 
+namespace {
+constexpr int kSpacing20 = 20;
+constexpr int kMargin20 = 20;
+constexpr int kFixedSize40 = 40;
+}  // namespace
+
 T_FilterWheelPage::T_FilterWheelPage(QWidget *parent) : T_BasePage(parent) {
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setSpacing(20);
-    mainLayout->setContentsMargins(20, 20, 20, 20);
+    auto *mainLayout = new QVBoxLayout(this);
+    mainLayout->setSpacing(kSpacing20);
+    mainLayout->setContentsMargins(kMargin20, kMargin20, kMargin20, kMargin20);
 
     // Top section
-    QHBoxLayout *topLayout = createTopLayout();
+    auto *topLayout = createTopLayout();
     mainLayout->addLayout(topLayout);
 
     // Create tab widget
-    ElaTabWidget *tabWidget = new ElaTabWidget(this);
+    auto *tabWidget = new ElaTabWidget(this);
 
     // Create and add "Information" tab
-    QWidget *infoTab = createInfoTab();
+    auto *infoTab = createInfoTab();
     tabWidget->addTab(infoTab, "滤镜轮信息");
 
     // Create and add "Filters" tab
-    QWidget *filtersTab = createFiltersTab();
+    auto *filtersTab = createFiltersTab();
     tabWidget->addTab(filtersTab, "滤镜");
 
     // Create and add "Settings" tab
-    QWidget *settingsTab = createSettingsTab();
+    auto *settingsTab = createSettingsTab();
     tabWidget->addTab(settingsTab, "设置");
 
     mainLayout->addWidget(tabWidget);
 
-    QWidget *centralWidget = new QWidget(this);
+    auto *centralWidget = new QWidget(this);
     centralWidget->setWindowTitle("滤镜轮面板");
-    QVBoxLayout *centerLayout = new QVBoxLayout(centralWidget);
+    auto *centerLayout = new QVBoxLayout(centralWidget);
     centerLayout->addLayout(mainLayout);
     centerLayout->setContentsMargins(0, 0, 0, 0);
     addCentralWidget(centralWidget, true, true, 0);
 }
 
-QHBoxLayout *T_FilterWheelPage::createTopLayout() {
-    QHBoxLayout *topLayout = new QHBoxLayout();
+auto T_FilterWheelPage::createTopLayout() -> QHBoxLayout * {
+    auto *topLayout = new QHBoxLayout();
 
-    ElaComboBox *filterWheelCombo = new ElaComboBox(this);
+    auto *filterWheelCombo = new ElaComboBox(this);
     filterWheelCombo->addItem("Manual filter wheel");
 
     auto createIconButton = [this](ElaIconType::IconName icon) {
-        ElaIconButton *button = new ElaIconButton(icon, this);
-        button->setFixedSize(40, 40);
+        auto *button = new ElaIconButton(icon, this);
+        button->setFixedSize(kFixedSize40, kFixedSize40);
         return button;
     };
 
-    ElaIconButton *settingsButton = createIconButton(ElaIconType::Gears);
-    ElaIconButton *refreshButton = createIconButton(ElaIconType::ArrowsRotate);
-    ElaIconButton *powerButton = createIconButton(ElaIconType::PowerOff);
+    auto *settingsButton = createIconButton(ElaIconType::Gears);
+    auto *refreshButton = createIconButton(ElaIconType::ArrowsRotate);
+    auto *powerButton = createIconButton(ElaIconType::PowerOff);
 
     topLayout->addWidget(filterWheelCombo, 1);
     topLayout->addWidget(settingsButton);
@@ -70,12 +76,12 @@ QHBoxLayout *T_FilterWheelPage::createTopLayout() {
     return topLayout;
 }
 
-QWidget *T_FilterWheelPage::createInfoTab() {
-    QWidget *infoWidget = new QWidget(this);
-    QVBoxLayout *layout = new QVBoxLayout(infoWidget);
+auto T_FilterWheelPage::createInfoTab() -> QWidget * {
+    auto *infoWidget = new QWidget(this);
+    auto *layout = new QVBoxLayout(infoWidget);
 
     // Basic Info Group
-    QGridLayout *infoLayout = new QGridLayout();
+    auto *infoLayout = new QGridLayout();
     infoLayout->addWidget(new InfoCard("名称", "Manual filter wheel", this), 0,
                           0);
     infoLayout->addWidget(
@@ -95,23 +101,24 @@ QWidget *T_FilterWheelPage::createInfoTab() {
     return infoWidget;
 }
 
-QWidget *T_FilterWheelPage::createFiltersTab() {
-    QWidget *filtersWidget = new QWidget(this);
-    QVBoxLayout *layout = new QVBoxLayout(filtersWidget);
+auto T_FilterWheelPage::createFiltersTab() -> QWidget * {
+    auto *filtersWidget = new QWidget(this);
+    auto *layout = new QVBoxLayout(filtersWidget);
 
     // Current Filter
-    QHBoxLayout *currentFilterLayout = new QHBoxLayout();
-    ElaComboBox *filterCombo = new ElaComboBox(this);
+    auto *currentFilterLayout = new QHBoxLayout();
+    auto *filterCombo = new ElaComboBox(this);
     filterCombo->addItem("Filter1");
-    QPushButton *changeButton = new QPushButton("更改", this);
+    auto *changeButton = new ElaPushButton("更改", this);
     currentFilterLayout->addWidget(filterCombo);
     currentFilterLayout->addWidget(changeButton);
     layout->addLayout(currentFilterLayout);
 
     // Filter List
-    QVBoxLayout *filterListLayout = new QVBoxLayout();
-    ElaText *filterNameLabel = new ElaText("滤镜名称", this);
-    QLineEdit *filterNameEdit = new QLineEdit("Filter1", this);
+    auto *filterListLayout = new QVBoxLayout();
+    auto *filterNameLabel = new ElaText("滤镜名称", this);
+    auto *filterNameEdit = new ElaLineEdit(this);
+    filterNameEdit->setText("Filter1");
     filterListLayout->addWidget(filterNameLabel);
     filterListLayout->addWidget(filterNameEdit);
     layout->addLayout(filterListLayout);
@@ -121,11 +128,11 @@ QWidget *T_FilterWheelPage::createFiltersTab() {
     return filtersWidget;
 }
 
-QWidget *T_FilterWheelPage::createSettingsTab() {
-    QWidget *settingsWidget = new QWidget(this);
-    QVBoxLayout *layout = new QVBoxLayout(settingsWidget);
+auto T_FilterWheelPage::createSettingsTab() -> QWidget * {
+    auto *settingsWidget = new QWidget(this);
+    auto *layout = new QVBoxLayout(settingsWidget);
 
-    ElaText *settingsText = new ElaText("暂无设置选项", this);
+    auto *settingsText = new ElaText("暂无设置选项", this);
     layout->addWidget(settingsText);
     layout->addStretch();
 

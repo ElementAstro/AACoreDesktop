@@ -2,7 +2,6 @@
 
 #include <QDesktopServices>
 #include <QHBoxLayout>
-#include <QPushButton>
 #include <QTimer>
 #include <QUrl>
 #include <QVBoxLayout>
@@ -12,6 +11,20 @@
 #include "ElaPushButton.h"
 #include "ElaText.h"
 
+namespace {
+constexpr int kMargin20 = 20;
+constexpr int kMargin25 = 25;
+constexpr int kFixedSize80 = 80;
+constexpr int kTextPixelSize24 = 24;
+constexpr int kTextPixelSize16 = 16;
+constexpr int kSpacing10 = 10;
+constexpr int kFixedHeight10 = 10;
+constexpr int kRange100 = 100;
+constexpr int kTextPixelSize12 = 12;
+constexpr int kTextPixelSize14 = 14;
+constexpr int kTimerInterval50 = 50;
+}  // namespace
+
 T_About::T_About(QWidget* parent) : ElaWidget(parent), m_progressValue(0) {
     setWindowTitle("关于 AACoreDesktop");
     setWindowIcon(QIcon(":/include/Image/Moon.jpg"));
@@ -19,27 +32,27 @@ T_About::T_About(QWidget* parent) : ElaWidget(parent), m_progressValue(0) {
     setWindowButtonFlags(ElaAppBarType::CloseButtonHint);
 
     // Main layout
-    QVBoxLayout* mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(20, 25, 20, 20);
+    auto* mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(kMargin20, kMargin25, kMargin20, kMargin20);
 
     // Header layout
-    QHBoxLayout* headerLayout = new QHBoxLayout();
+    auto* headerLayout = new QHBoxLayout();
 
     // Logo
-    ElaImageCard* logoCard = new ElaImageCard(this);
-    logoCard->setFixedSize(80, 80);
+    auto* logoCard = new ElaImageCard(this);
+    logoCard->setFixedSize(kFixedSize80, kFixedSize80);
     logoCard->setIsPreserveAspectCrop(true);
     logoCard->setCardImage(QImage(":/include/Image/Moon.jpg"));
     headerLayout->addWidget(logoCard);
 
     // Title and version
-    QVBoxLayout* titleLayout = new QVBoxLayout();
-    ElaText* titleText = new ElaText("ElaWidgetTools", this);
-    titleText->setTextPixelSize(24);
-    titleText->setFont(QFont("Arial", 24, QFont::Bold));
+    auto* titleLayout = new QVBoxLayout();
+    auto* titleText = new ElaText("ElaWidgetTools", this);
+    titleText->setTextPixelSize(kTextPixelSize24);
+    titleText->setFont(QFont("Arial", kTextPixelSize24, QFont::Bold));
 
-    ElaText* versionText = new ElaText("版本1.0.0", this);
-    versionText->setTextPixelSize(16);
+    auto* versionText = new ElaText("版本1.0.0", this);
+    versionText->setTextPixelSize(kTextPixelSize16);
 
     titleLayout->addWidget(titleText);
     titleLayout->addWidget(versionText);
@@ -49,14 +62,14 @@ T_About::T_About(QWidget* parent) : ElaWidget(parent), m_progressValue(0) {
     mainLayout->addLayout(headerLayout);
 
     // Separator
-    QFrame* line = new QFrame(this);
+    auto* line = new QFrame(this);
     line->setFrameShape(QFrame::HLine);
     line->setFrameShadow(QFrame::Sunken);
     mainLayout->addWidget(line);
 
     // Information layout
-    QVBoxLayout* infoLayout = new QVBoxLayout();
-    infoLayout->setSpacing(10);
+    auto* infoLayout = new QVBoxLayout();
+    infoLayout->setSpacing(kSpacing10);
 
     addInfoText(infoLayout, "授权协议:", "AGPL-3");
     addInfoText(infoLayout, "作者:", "astro_air@126.com");
@@ -65,30 +78,39 @@ T_About::T_About(QWidget* parent) : ElaWidget(parent), m_progressValue(0) {
 
     // Progress bar
     m_progressBar = new ElaProgressBar(this);
-    m_progressBar->setFixedHeight(10);
-    m_progressBar->setRange(0, 100);
+    m_progressBar->setFixedHeight(kFixedHeight10);
+    m_progressBar->setRange(0, kRange100);
     m_progressBar->setValue(0);
     mainLayout->addWidget(m_progressBar);
 
     // Buttons layout
-    QHBoxLayout* buttonLayout = new QHBoxLayout();
+    auto* buttonLayout = new QHBoxLayout();
 
-    ElaPushButton* websiteButton = new ElaPushButton("访问网站", this);
+    auto* websiteButton = new ElaPushButton("访问网站", this);
     connect(websiteButton, &ElaPushButton::clicked, this,
             &T_About::onWebsiteClicked);
 
-    ElaPushButton* updateButton = new ElaPushButton("检查更新", this);
+    auto* updateButton = new ElaPushButton("检查更新", this);
     connect(updateButton, &ElaPushButton::clicked, this,
             &T_About::onUpdateClicked);
 
+    auto* helpButton = new ElaPushButton("帮助", this);
+    connect(helpButton, &ElaPushButton::clicked, this, &T_About::onHelpClicked);
+
+    auto* feedbackButton = new ElaPushButton("反馈", this);
+    connect(feedbackButton, &ElaPushButton::clicked, this,
+            &T_About::onFeedbackClicked);
+
     buttonLayout->addWidget(websiteButton);
     buttonLayout->addWidget(updateButton);
+    buttonLayout->addWidget(helpButton);
+    buttonLayout->addWidget(feedbackButton);
 
     mainLayout->addLayout(buttonLayout);
 
     // Copyright
-    ElaText* copyrightText = new ElaText("版权所有 © 2024-present Max Qian", this);
-    copyrightText->setTextPixelSize(12);
+    auto* copyrightText = new ElaText("版权所有 © 2024-present Max Qian", this);
+    copyrightText->setTextPixelSize(kTextPixelSize12);
     copyrightText->setAlignment(Qt::AlignCenter);
     mainLayout->addWidget(copyrightText);
 
@@ -97,18 +119,18 @@ T_About::T_About(QWidget* parent) : ElaWidget(parent), m_progressValue(0) {
     connect(m_timer, &QTimer::timeout, this, &T_About::updateProgressBar);
 }
 
-T_About::~T_About() {}
+T_About::~T_About() = default;
 
 void T_About::addInfoText(QVBoxLayout* layout, const QString& label,
                           const QString& value) {
-    QHBoxLayout* rowLayout = new QHBoxLayout();
+    auto* rowLayout = new QHBoxLayout();
 
-    ElaText* labelText = new ElaText(label, this);
-    labelText->setTextPixelSize(14);
-    labelText->setFont(QFont("Arial", 14, QFont::Bold));
+    auto* labelText = new ElaText(label, this);
+    labelText->setTextPixelSize(kTextPixelSize14);
+    labelText->setFont(QFont("Arial", kTextPixelSize14, QFont::Bold));
 
-    ElaText* valueText = new ElaText(value, this);
-    valueText->setTextPixelSize(14);
+    auto* valueText = new ElaText(value, this);
+    valueText->setTextPixelSize(kTextPixelSize14);
     valueText->setTextInteractionFlags(Qt::TextSelectableByMouse);
 
     rowLayout->addWidget(labelText);
@@ -124,19 +146,29 @@ void T_About::onWebsiteClicked() {
 void T_About::onUpdateClicked() {
     m_progressValue = 0;
     m_progressBar->setValue(0);
-    m_timer->start(50);
+    m_timer->start(kTimerInterval50);
+}
+
+void T_About::onHelpClicked() {
+    QDesktopServices::openUrl(
+        QUrl("https://github.com/ElementAstro/Lithium/wiki"));
+}
+
+void T_About::onFeedbackClicked() {
+    QDesktopServices::openUrl(
+        QUrl("https://github.com/ElementAstro/Lithium/issues"));
 }
 
 void T_About::updateProgressBar() {
     m_progressValue += 2;
     m_progressBar->setValue(m_progressValue);
 
-    if (m_progressValue >= 100) {
+    if (m_progressValue >= kRange100) {
         m_timer->stop();
         // Here you would typically check for updates and show the result
         // For demonstration, we'll just show a message
-        ElaText* updateText = new ElaText("已是最新版本", this);
-        updateText->setTextPixelSize(14);
+        auto* updateText = new ElaText("已是最新版本", this);
+        updateText->setTextPixelSize(kTextPixelSize14);
         updateText->setAlignment(Qt::AlignCenter);
         qobject_cast<QVBoxLayout*>(layout())->addWidget(updateText);
     }

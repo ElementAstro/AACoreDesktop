@@ -4,7 +4,6 @@
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
-#include <QLineEdit>
 #include <QSpacerItem>
 #include <QStyleFactory>
 #include <QVBoxLayout>
@@ -17,30 +16,46 @@
 #include "ElaSpinBox.h"
 #include "ElaText.h"
 
+namespace {
+constexpr int kSpacing20 = 20;
+constexpr int kMargin20 = 20;
+constexpr int kTextPixelSize15 = 15;
+constexpr int kMinimumWidth200 = 200;
+constexpr int kMinimumWidth50 = 50;
+constexpr int kPort7624 = 7624;
+constexpr int kPortRangeMin = 1000;
+constexpr int kPortRangeMax = 88524;
+constexpr int kPort8624 = 8624;
+constexpr int kColumnStretch1 = 1;
+constexpr int kColumnStretch5 = 5;
+constexpr int kRow4 = 4;
+constexpr int kColumnSpan6 = 6;
+}  // namespace
+
 T_DeviceConnection::T_DeviceConnection(QWidget *parent) : T_BasePage(parent) {
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setSpacing(20);
-    mainLayout->setContentsMargins(20, 20, 20, 20);
+    auto *mainLayout = new QVBoxLayout(this);
+    mainLayout->setSpacing(kSpacing20);
+    mainLayout->setContentsMargins(kMargin20, kMargin20, kMargin20, kMargin20);
 
     // Profile section
-    QGroupBox *profileGroup = new QGroupBox("Profile", this);
-    QVBoxLayout *profileLayout = new QVBoxLayout(profileGroup);
+    auto *profileGroup = new QGroupBox("Profile", this);
+    auto *profileLayout = new QVBoxLayout(profileGroup);
 
     // Name and checkboxes
-    QHBoxLayout *nameLayout = new QHBoxLayout();
-    ElaText *nameLabel = new ElaText("Name:", this);
-    nameLabel->setTextPixelSize(15);
-    ElaLineEdit *nameEdit = new ElaLineEdit(this);
+    auto *nameLayout = new QHBoxLayout();
+    auto *nameLabel = new ElaText("Name:", this);
+    nameLabel->setTextPixelSize(kTextPixelSize15);
+    auto *nameEdit = new ElaLineEdit(this);
     nameEdit->setText("测试");
-    nameEdit->setMinimumWidth(200);
+    nameEdit->setMinimumWidth(kMinimumWidth200);
     nameLayout->addWidget(nameLabel);
     nameLayout->addWidget(nameEdit);
     nameLayout->addStretch();
 
-    QHBoxLayout *checkboxLayout = new QHBoxLayout();
-    ElaCheckBox *autoConnectCheck = new ElaCheckBox("Auto Connect", this);
-    ElaCheckBox *portSelectorCheck = new ElaCheckBox("Port Selector", this);
-    ElaCheckBox *siteInfoCheck = new ElaCheckBox("Site Info", this);
+    auto *checkboxLayout = new QHBoxLayout();
+    auto *autoConnectCheck = new ElaCheckBox("Auto Connect", this);
+    auto *portSelectorCheck = new ElaCheckBox("Port Selector", this);
+    auto *siteInfoCheck = new ElaCheckBox("Site Info", this);
     checkboxLayout->addWidget(autoConnectCheck);
     checkboxLayout->addWidget(portSelectorCheck);
     checkboxLayout->addWidget(siteInfoCheck);
@@ -50,25 +65,25 @@ T_DeviceConnection::T_DeviceConnection(QWidget *parent) : T_BasePage(parent) {
     profileLayout->addLayout(checkboxLayout);
 
     // Mode and connection details
-    QHBoxLayout *modeLayout = new QHBoxLayout();
-    ElaText *modeLabel = new ElaText("Mode:", this);
-    modeLabel->setTextPixelSize(15);
-    ElaRadioButton *localRadio = new ElaRadioButton("Local", this);
-    ElaRadioButton *remoteRadio = new ElaRadioButton("Remote", this);
+    auto *modeLayout = new QHBoxLayout();
+    auto *modeLabel = new ElaText("Mode:", this);
+    modeLabel->setTextPixelSize(kTextPixelSize15);
+    auto *localRadio = new ElaRadioButton("Local", this);
+    auto *remoteRadio = new ElaRadioButton("Remote", this);
     modeLayout->addWidget(modeLabel);
     modeLayout->addWidget(localRadio);
     modeLayout->addWidget(remoteRadio);
     modeLayout->addStretch();
 
-    QHBoxLayout *connectionLayout = new QHBoxLayout();
-    ElaText *hostLabel = new ElaText("Host:", this);
-    hostLabel->setTextPixelSize(15);
-    ElaLineEdit *hostEdit = new ElaLineEdit(this);
+    auto *connectionLayout = new QHBoxLayout();
+    auto *hostLabel = new ElaText("Host:", this);
+    hostLabel->setTextPixelSize(kTextPixelSize15);
+    auto *hostEdit = new ElaLineEdit(this);
     hostEdit->setText("127.0.0.1");
-    ElaText *portLabel = new ElaText("Port:", this);
-    portLabel->setTextPixelSize(15);
-    ElaSpinBox *portSpinBox = new ElaSpinBox(this);
-    portSpinBox->setValue(7624);
+    auto *portLabel = new ElaText("Port:", this);
+    portLabel->setTextPixelSize(kTextPixelSize15);
+    auto *portSpinBox = new ElaSpinBox(this);
+    portSpinBox->setValue(kPort7624);
     connectionLayout->addWidget(hostLabel);
     connectionLayout->addWidget(hostEdit);
     connectionLayout->addWidget(portLabel);
@@ -79,31 +94,30 @@ T_DeviceConnection::T_DeviceConnection(QWidget *parent) : T_BasePage(parent) {
     profileLayout->addLayout(connectionLayout);
 
     // Guiding and additional options
-    QHBoxLayout *guidingLayout = new QHBoxLayout();
-    ElaText *guidingLabel = new ElaText("Guiding:", this);
-    guidingLabel->setTextPixelSize(15);
-    ElaComboBox *guidingCombo = new ElaComboBox(this);
+    auto *guidingLayout = new QHBoxLayout();
+    auto *guidingLabel = new ElaText("Guiding:", this);
+    guidingLabel->setTextPixelSize(kTextPixelSize15);
+    auto *guidingCombo = new ElaComboBox(this);
     guidingCombo->addItem("Internal");
     guidingCombo->addItem("PHD2");
     guidingCombo->addItem("Sodium");
     guidingCombo->addItem("None");
-    guidingCombo->setMinimumWidth(200);
+    guidingCombo->setMinimumWidth(kMinimumWidth200);
     guidingLayout->addWidget(guidingLabel);
     guidingLayout->addWidget(guidingCombo);
     guidingLayout->addStretch();
 
-    QHBoxLayout *optionsLayout = new QHBoxLayout();
-    ElaCheckBox *indiWebManagerCheck =
-        new ElaCheckBox("INDI Web Manager", this);
-    ElaLineEdit *indiWebManagerHost = new ElaLineEdit(this);
+    auto *optionsLayout = new QHBoxLayout();
+    auto *indiWebManagerCheck = new ElaCheckBox("INDI Web Manager", this);
+    auto *indiWebManagerHost = new ElaLineEdit(this);
     indiWebManagerHost->setText("127.0.0.1");
-    indiWebManagerHost->setMinimumWidth(50);
-    ElaSpinBox *indiWebManagerPort = new ElaSpinBox(this);
-    indiWebManagerPort->setRange(1000, 88524);
-    indiWebManagerPort->setValue(8624);
+    indiWebManagerHost->setMinimumWidth(kMinimumWidth50);
+    auto *indiWebManagerPort = new ElaSpinBox(this);
+    indiWebManagerPort->setRange(kPortRangeMin, kPortRangeMax);
+    indiWebManagerPort->setValue(kPort8624);
 
-    ElaPushButton *webManagerButton = new ElaPushButton("Web Manager", this);
-    ElaPushButton *scanButton = new ElaPushButton("Scan", this);
+    auto *webManagerButton = new ElaPushButton("Web Manager", this);
+    auto *scanButton = new ElaPushButton("Scan", this);
     optionsLayout->addWidget(indiWebManagerCheck);
     optionsLayout->addWidget(indiWebManagerHost);
     optionsLayout->addWidget(indiWebManagerPort);
@@ -117,27 +131,31 @@ T_DeviceConnection::T_DeviceConnection(QWidget *parent) : T_BasePage(parent) {
     mainLayout->addWidget(profileGroup);
 
     // Select Devices section
-    QGroupBox *devicesGroup = new QGroupBox("Select Devices", this);
-    QGridLayout *devicesLayout = new QGridLayout(devicesGroup);
-    devicesLayout->setColumnStretch(1, 1);
-    devicesLayout->setColumnStretch(3, 1);
-    devicesLayout->setColumnStretch(5, 1);
+    auto *devicesGroup = new QGroupBox("Select Devices", this);
+    auto *devicesLayout = new QGridLayout(devicesGroup);
+    devicesLayout->setColumnStretch(1, kColumnStretch1);
+    devicesLayout->setColumnStretch(3, kColumnStretch1);
+    devicesLayout->setColumnStretch(kColumnStretch5, kColumnStretch1);
 
     QStringList deviceLabels = {
         "Mount:", "Camera 1:", "Camera 2:", "Focuser:", "Filter:", "AO:",
         "Dome:",  "Weather:",  "Aux 1:",    "Aux 2:",   "Aux 3:",  "Aux 4:"};
-    int row = 0, col = 0;
+    int row = 0;
+    int col = 0;
     for (const QString &label : deviceLabels) {
-        ElaText *deviceLabel = new ElaText(label, this);
-        deviceLabel->setTextPixelSize(15);
-        ElaComboBox *deviceCombo = new ElaComboBox(this);
+        auto *deviceLabel = new ElaText(label, this);
+        deviceLabel->setTextPixelSize(kTextPixelSize15);
+        auto *deviceCombo = new ElaComboBox(this);
         deviceCombo->addItem("--");
-        if (label == "Camera 1:")
+        if (label == "Camera 1:") {
             deviceCombo->addItem("CCD Simulator");
-        if (label == "Focuser:")
+        }
+        if (label == "Focuser:") {
             deviceCombo->addItem("Focuser Simulator");
-        if (label == "Filter:")
+        }
+        if (label == "Filter:") {
             deviceCombo->addItem("Filter Simulator");
+        }
         devicesLayout->addWidget(deviceLabel, row, col * 2);
         devicesLayout->addWidget(deviceCombo, row, col * 2 + 1);
         col++;
@@ -147,34 +165,34 @@ T_DeviceConnection::T_DeviceConnection(QWidget *parent) : T_BasePage(parent) {
         }
     }
 
-    QHBoxLayout *remoteLayout = new QHBoxLayout();
-    ElaText *remoteLabel = new ElaText("Remote:", this);
-    remoteLabel->setTextPixelSize(15);
-    ElaLineEdit *remoteEdit = new ElaLineEdit(this);
+    auto *remoteLayout = new QHBoxLayout();
+    auto *remoteLabel = new ElaText("Remote:", this);
+    remoteLabel->setTextPixelSize(kTextPixelSize15);
+    auto *remoteEdit = new ElaLineEdit(this);
     remoteEdit->setText(
         "driver@host:port, driver@host, @host:port, @host, driver");
-    ElaPushButton *scriptsButton = new ElaPushButton("Scripts", this);
+    auto *scriptsButton = new ElaPushButton("Scripts", this);
     remoteLayout->addWidget(remoteLabel);
     remoteLayout->addWidget(remoteEdit, 1);
     remoteLayout->addWidget(scriptsButton);
 
-    devicesLayout->addLayout(remoteLayout, 4, 0, 1, 6);
+    devicesLayout->addLayout(remoteLayout, kRow4, 0, 1, kColumnSpan6);
 
     mainLayout->addWidget(devicesGroup);
 
     // Bottom buttons
-    QHBoxLayout *bottomLayout = new QHBoxLayout();
-    ElaPushButton *saveButton = new ElaPushButton("Save", this);
-    ElaPushButton *resetButton = new ElaPushButton("Reset", this);
+    auto *bottomLayout = new QHBoxLayout();
+    auto *saveButton = new ElaPushButton("Save", this);
+    auto *resetButton = new ElaPushButton("Reset", this);
     bottomLayout->addStretch();
     bottomLayout->addWidget(saveButton);
     bottomLayout->addWidget(resetButton);
 
     mainLayout->addLayout(bottomLayout);
 
-    QWidget *centralWidget = new QWidget(this);
+    auto *centralWidget = new QWidget(this);
     centralWidget->setWindowTitle("设备连接");
-    QVBoxLayout *centerLayout = new QVBoxLayout(centralWidget);
+    auto *centerLayout = new QVBoxLayout(centralWidget);
     centerLayout->addLayout(mainLayout);
     centerLayout->addStretch();
     centerLayout->setContentsMargins(0, 0, 0, 0);
@@ -192,7 +210,7 @@ T_DeviceConnection::T_DeviceConnection(QWidget *parent) : T_BasePage(parent) {
             &T_DeviceConnection::onScriptsButtonClicked);
 }
 
-T_DeviceConnection::~T_DeviceConnection() {}
+T_DeviceConnection::~T_DeviceConnection() = default;
 
 void T_DeviceConnection::onSaveButtonClicked() {
     // Save button functionality

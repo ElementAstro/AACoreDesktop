@@ -2,68 +2,74 @@
 
 #include <QGridLayout>
 #include <QHBoxLayout>
-#include <QLineEdit>
-#include <QPushButton>
 #include <QVBoxLayout>
 
-#include "C_InfoCard.h"
+#include "Components/C_InfoCard.h"
 #include "ElaComboBox.h"
 #include "ElaIconButton.h"
+#include "ElaLineEdit.h"
+#include "ElaPushButton.h"
 #include "ElaTabWidget.h"
 #include "ElaText.h"
 #include "ElaToggleSwitch.h"
 
+namespace {
+constexpr int kSpacing20 = 20;
+constexpr int kFixedSize40 = 40;
+}  // namespace
+
 T_FocuserPage::T_FocuserPage(QWidget *parent) : T_BasePage(parent) {
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setSpacing(20);
-    mainLayout->setContentsMargins(20, 20, 20, 20);
+    auto *mainLayout = new QVBoxLayout(this);
+    mainLayout->setSpacing(kSpacing20);
+    mainLayout->setContentsMargins(kSpacing20, kSpacing20, kSpacing20,
+                                   kSpacing20);
 
     // Top section
-    QHBoxLayout *topLayout = createTopLayout();
+    auto *topLayout = createTopLayout();
     mainLayout->addLayout(topLayout);
 
     // Create tab widget
-    ElaTabWidget *tabWidget = new ElaTabWidget(this);
+    auto *tabWidget = new ElaTabWidget(this);
 
     // Create and add "Information" tab
-    QWidget *infoTab = createInfoTab();
+    auto *infoTab = createInfoTab();
     tabWidget->addTab(infoTab, "调焦器信息");
 
     // Create and add "Control" tab
-    QWidget *controlTab = createControlTab();
+    auto *controlTab = createControlTab();
     tabWidget->addTab(controlTab, "调焦器控制");
 
     // Create and add "Settings" tab
-    QWidget *settingsTab = createSettingsTab();
+    auto *settingsTab = createSettingsTab();
     tabWidget->addTab(settingsTab, "设置");
 
     mainLayout->addWidget(tabWidget);
 
-    QWidget *centralWidget = new QWidget(this);
+    auto *centralWidget = new QWidget(this);
     centralWidget->setWindowTitle("调焦器面板");
-    QVBoxLayout *centerLayout = new QVBoxLayout(centralWidget);
+    auto *centerLayout = new QVBoxLayout(centralWidget);
     centerLayout->addLayout(mainLayout);
     centerLayout->setContentsMargins(0, 0, 0, 0);
     addCentralWidget(centralWidget, true, true, 0);
 }
 
-T_FocuserPage::~T_FocuserPage() {}
+T_FocuserPage::~T_FocuserPage() = default;
 
-QHBoxLayout *T_FocuserPage::createTopLayout() {
-    QHBoxLayout *topLayout = new QHBoxLayout();
+auto T_FocuserPage::createTopLayout() -> QHBoxLayout * {
+    auto *topLayout = new QHBoxLayout();
 
-    ElaComboBox *focuserCombo = new ElaComboBox(this);
+    auto *focuserCombo = new ElaComboBox(this);
     focuserCombo->addItem("Simulator");
 
     auto createIconButton = [this](ElaIconType::IconName icon) {
-        ElaIconButton *button = new ElaIconButton(icon, this);
-        button->setFixedSize(40, 40);
+        auto *button = new ElaIconButton(icon, this);
+        button->setFixedSize(kFixedSize40, kFixedSize40);
         return button;
     };
 
-    ElaIconButton *settingsButton = createIconButton(ElaIconType::Gears);
-    ElaIconButton *refreshButton = createIconButton(ElaIconType::ArrowsRotate);
-    ElaIconButton *powerButton = createIconButton(ElaIconType::PowerOff);
+    auto *settingsButton = createIconButton(ElaIconType::Gears);
+    auto *refreshButton = createIconButton(ElaIconType::ArrowsRotate);
+    auto *powerButton = createIconButton(ElaIconType::PowerOff);
 
     topLayout->addWidget(focuserCombo, 1);
     topLayout->addWidget(settingsButton);
@@ -73,12 +79,12 @@ QHBoxLayout *T_FocuserPage::createTopLayout() {
     return topLayout;
 }
 
-QWidget *T_FocuserPage::createInfoTab() {
-    QWidget *infoWidget = new QWidget(this);
-    QVBoxLayout *layout = new QVBoxLayout(infoWidget);
+auto T_FocuserPage::createInfoTab() -> QWidget * {
+    auto *infoWidget = new QWidget(this);
+    auto *layout = new QVBoxLayout(infoWidget);
 
     // Basic Info Group
-    QGridLayout *infoLayout = new QGridLayout();
+    auto *infoLayout = new QGridLayout();
     infoLayout->addWidget(new InfoCard("名称", "Simulator", this), 0, 0);
     infoLayout->addWidget(new InfoCard("描述", "", this), 0, 1);
     infoLayout->addWidget(new InfoCard("驱动信息", "", this), 1, 0);
@@ -96,35 +102,36 @@ QWidget *T_FocuserPage::createInfoTab() {
     return infoWidget;
 }
 
-QWidget *T_FocuserPage::createControlTab() {
-    QWidget *controlWidget = new QWidget(this);
-    QVBoxLayout *layout = new QVBoxLayout(controlWidget);
+auto T_FocuserPage::createControlTab() -> QWidget * {
+    auto *controlWidget = new QWidget(this);
+    auto *layout = new QVBoxLayout(controlWidget);
 
     // Temperature Compensation
-    QHBoxLayout *tempCompLayout = new QHBoxLayout();
-    ElaText *tempCompLabel = new ElaText("温度补偿", this);
-    ElaToggleSwitch *tempCompSwitch = new ElaToggleSwitch(this);
+    auto *tempCompLayout = new QHBoxLayout();
+    auto *tempCompLabel = new ElaText("温度补偿", this);
+    auto *tempCompSwitch = new ElaToggleSwitch(this);
     tempCompLayout->addWidget(tempCompLabel);
     tempCompLayout->addWidget(tempCompSwitch);
     tempCompLayout->addStretch();
     layout->addLayout(tempCompLayout);
 
     // Target Position
-    QHBoxLayout *targetPosLayout = new QHBoxLayout();
-    ElaText *targetPosLabel = new ElaText("目标位置", this);
-    QLineEdit *targetPosEdit = new QLineEdit("12500", this);
-    QPushButton *moveButton = new QPushButton("移动", this);
+    auto *targetPosLayout = new QHBoxLayout();
+    auto *targetPosLabel = new ElaText("目标位置", this);
+    auto *targetPosEdit = new ElaLineEdit(this);
+    targetPosEdit->setText("12500");
+    auto *moveButton = new ElaPushButton("移动", this);
     targetPosLayout->addWidget(targetPosLabel);
     targetPosLayout->addWidget(targetPosEdit);
     targetPosLayout->addWidget(moveButton);
     layout->addLayout(targetPosLayout);
 
     // Movement Buttons
-    QHBoxLayout *moveButtonsLayout = new QHBoxLayout();
-    QPushButton *moveLeftMost = new QPushButton("<<", this);
-    QPushButton *moveLeft = new QPushButton("<", this);
-    QPushButton *moveRight = new QPushButton(">", this);
-    QPushButton *moveRightMost = new QPushButton(">>", this);
+    auto *moveButtonsLayout = new QHBoxLayout();
+    auto *moveLeftMost = new ElaPushButton("<<", this);
+    auto *moveLeft = new ElaPushButton("<", this);
+    auto *moveRight = new ElaPushButton(">", this);
+    auto *moveRightMost = new ElaPushButton(">>", this);
     moveButtonsLayout->addWidget(moveLeftMost);
     moveButtonsLayout->addWidget(moveLeft);
     moveButtonsLayout->addWidget(moveRight);
@@ -136,11 +143,11 @@ QWidget *T_FocuserPage::createControlTab() {
     return controlWidget;
 }
 
-QWidget *T_FocuserPage::createSettingsTab() {
-    QWidget *settingsWidget = new QWidget(this);
-    QVBoxLayout *layout = new QVBoxLayout(settingsWidget);
+auto T_FocuserPage::createSettingsTab() -> QWidget * {
+    auto *settingsWidget = new QWidget(this);
+    auto *layout = new QVBoxLayout(settingsWidget);
 
-    ElaText *settingsText = new ElaText("暂无设置选项", this);
+    auto *settingsText = new ElaText("暂无设置选项", this);
     layout->addWidget(settingsText);
     layout->addStretch();
 

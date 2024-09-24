@@ -24,6 +24,8 @@ class T_TargetSearchPage;
 class T_SerialConfig;
 class T_SerialDebugPage;
 
+class T_ImageViewerPage;
+
 class T_SoftwarePage;
 class T_ProcessPage;
 class T_SystemInfoPage;
@@ -34,6 +36,9 @@ class T_LogPanelPage;
 class T_Setting;
 class T_I18NPage;
 
+class T_WebSocketClientPage;
+class T_HttpClientPage;
+class T_TcpClientPage;
 class MainWindow : public ElaWindow {
     Q_OBJECT
 
@@ -50,7 +55,7 @@ private slots:
     void changeLanguage(const QString &languageCode);
 
 private:
-    ElaContentDialog* _closeDialog{nullptr};
+    ElaContentDialog *_closeDialog{nullptr};
 
     T_Home *_homePage{nullptr};
     T_Icon *_iconPage{nullptr};
@@ -69,8 +74,12 @@ private:
     T_ProcessPage *_processPage{nullptr};
     T_SystemInfoPage *_systemInfoPage{nullptr};
     T_LogPanelPage *_logPanelPage{nullptr};
-    T_Setting* _settingPage{nullptr};
+    T_Setting *_settingPage{nullptr};
     T_TerminalPage *_terminalPage{nullptr};
+    T_ImageViewerPage *_imageViewerPage{nullptr};
+    T_WebSocketClientPage *_webSocketClientPage{nullptr};
+    T_HttpClientPage *_httpClientPage{nullptr};
+    T_TcpClientPage *_tcpClientPage{nullptr};
 
     QTranslator translator;
     T_I18NPage *i18nManager;  // I18nManager 组件实例
