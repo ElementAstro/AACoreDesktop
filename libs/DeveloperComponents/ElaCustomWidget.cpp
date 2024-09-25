@@ -3,14 +3,14 @@
 #include <QPainter>
 #include <QVBoxLayout>
 
-#include "ElaAppBar.h"
 #include "ElaTheme.h"
+Q_TAKEOVER_NATIVEEVENT_CPP(ElaCustomWidget, _appBar);
 ElaCustomWidget::ElaCustomWidget(QWidget* parent)
-    : QWidget{parent}
+    : QDialog{parent}
 {
     resize(500, 500); // 默认宽高
-                      // 自定义AppBar
     setObjectName("ElaCustomWidget");
+    // 自定义AppBar
     _appBar = new ElaAppBar(this);
     _appBar->setWindowButtonFlags(ElaAppBarType::MinimizeButtonHint | ElaAppBarType::MaximizeButtonHint | ElaAppBarType::CloseButtonHint);
     _mainLayout = new QVBoxLayout(this);

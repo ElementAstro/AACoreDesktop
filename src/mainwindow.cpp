@@ -36,6 +36,8 @@
 
 #include "Page/Log/T_LogPanel.h"
 
+#include "Plugin/PluginManagerPage.h"
+
 #include "Page/Sequencer/T_SimpleSequencer.h"
 
 #include "Page/Serial/T_SerialConfig.h"
@@ -151,6 +153,7 @@ void MainWindow::initContent() {
     _httpClientPage = new T_HttpClientPage(this);
     _webSocketClientPage = new T_WebSocketClientPage(this);
     _tcpClientPage = new T_TcpClientPage(this);
+    _pluginManagerPage = new PluginManagerPage(this);
 
     // GraphicsView
     auto scene = new ElaGraphicsScene(this);
@@ -186,6 +189,11 @@ void MainWindow::initContent() {
     addExpanderNode("Sequencer", sequencerKey, ElaIconType::BallotCheck);
     addPageNode("Sequencer", _simpleSequencerPage, sequencerKey,
                 ElaIconType::BlockQuote);
+
+    QString pluginKey;
+    addExpanderNode("Plugin", pluginKey, ElaIconType::Plug);
+    addPageNode("Plugin", _pluginManagerPage, pluginKey,
+                ElaIconType::Plug);
 
     addPageNode("TargetSearch", _targetSearchPage,
                 ElaIconType::MagnifyingGlassPlus);

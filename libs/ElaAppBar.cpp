@@ -1,15 +1,11 @@
 #include "ElaAppBar.h"
 
+#include <QApplication>
 #include <QDebug>
 
 #include "ElaText.h"
 #include "ElaToolButton.h"
-#ifdef Q_OS_WIN
-#include <Windows.h>
-#include <dwmapi.h>
-#include <windowsx.h>
-#endif
-#include <QApplication>
+#include "ElaWinShadowHelper.h"
 #ifndef Q_OS_WIN
 #include <QDateTime>
 #include <QWindow>
@@ -31,25 +27,6 @@
 Q_PROPERTY_CREATE_Q_CPP(ElaAppBar, bool, IsStayTop)
 Q_PROPERTY_CREATE_Q_CPP(ElaAppBar, bool, IsDefaultClosed)
 Q_PROPERTY_CREATE_Q_CPP(ElaAppBar, bool, IsOnlyAllowMinAndClose)
-#ifdef Q_OS_WIN
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 5, 3) && QT_VERSION <= QT_VERSION_CHECK(6, 6, 1))
-[[maybe_unused]] static inline void setShadow(HWND hwnd)
-{
-    const MARGINS shadow = {1, 0, 0, 0};
-    typedef HRESULT(WINAPI * DwmExtendFrameIntoClientAreaPtr)(HWND hWnd, const MARGINS* pMarInset);
-    HMODULE module = LoadLibraryW(L"dwmapi.dll");
-    if (module)
-    {
-        DwmExtendFrameIntoClientAreaPtr dwm_extendframe_into_client_area_;
-        dwm_extendframe_into_client_area_ = reinterpret_cast<DwmExtendFrameIntoClientAreaPtr>(GetProcAddress(module, "DwmExtendFrameIntoClientArea"));
-        if (dwm_extendframe_into_client_area_)
-        {
-            dwm_extendframe_into_client_area_(hwnd, &shadow);
-        }
-    }
-}
-#endif
-#endif
 
 ElaAppBar::ElaAppBar(QWidget* parent)
     : QWidget{parent}, d_ptr(new ElaAppBarPrivate())
@@ -60,7 +37,6 @@ ElaAppBar::ElaAppBar(QWidget* parent)
     d->_pAppBarHeight = 45;
     setFixedHeight(d->_pAppBarHeight);
     window()->setContentsMargins(0, this->height(), 0, 0);
-    createWinId();
     d->q_ptr = this;
     d->_pIsStayTop = false;
     d->_pIsFixedSize = false;
@@ -73,7 +49,6 @@ ElaAppBar::ElaAppBar(QWidget* parent)
 #ifdef Q_OS_WIN
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 5, 3) && QT_VERSION <= QT_VERSION_CHECK(6, 6, 1))
     window()->setWindowFlags((window()->windowFlags()) | Qt::WindowMinimizeButtonHint | Qt::FramelessWindowHint);
-    setShadow((HWND)(window()->winId()));
 #endif
 #else
     window()->setWindowFlags((window()->windowFlags()) | Qt::FramelessWindowHint | Qt::WindowMinMaxButtonsHint | Qt::WindowCloseButtonHint);
@@ -181,23 +156,19 @@ ElaAppBar::ElaAppBar(QWidget* parent)
     d->_mainLayout->addLayout(d->_createVLayout(d->_closeButton));
 
 #ifdef Q_OS_WIN
-    HWND hwnd = reinterpret_cast<HWND>(window()->winId());
-    DWORD style = ::GetWindowLongPtr(hwnd, GWL_STYLE);
-    ::SetWindowLongPtr(hwnd, GWL_STYLE, style | WS_MAXIMIZEBOX | WS_THICKFRAME);
     for (int i = 0; i < qApp->screens().count(); i++)
     {
         connect(qApp->screens().at(i), &QScreen::logicalDotsPerInchChanged, this, [=] {
             if (d->_pIsFixedSize)
             {
+                HWND hwnd = (HWND)(d->_currentWinID);
                 SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_FRAMECHANGED);
             }
         });
     }
-
-    SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
-
     //主屏幕变更处理
     connect(qApp, &QApplication::primaryScreenChanged, this, [=]() {
+        HWND hwnd = (HWND)(d->_currentWinID);
         ::SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
         ::RedrawWindow(hwnd, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
     });
@@ -289,7 +260,7 @@ void ElaAppBar::setIsFixedSize(bool isFixedSize)
     Q_D(ElaAppBar);
     d->_pIsFixedSize = isFixedSize;
 #ifdef Q_OS_WIN
-    HWND hwnd = reinterpret_cast<HWND>(window()->winId());
+    HWND hwnd = (HWND)d->_currentWinID;
     DWORD style = ::GetWindowLongPtr(hwnd, GWL_STYLE);
     if (d->_pIsFixedSize)
     {
@@ -359,10 +330,6 @@ void ElaAppBar::closeWindow()
     Q_D(ElaAppBar);
     QPropertyAnimation* closeOpacityAnimation = new QPropertyAnimation(window(), "windowOpacity");
     connect(closeOpacityAnimation, &QPropertyAnimation::finished, this, [=]() {
-#ifdef Q_OS_WIN
-        QGuiApplication::instance()->removeNativeEventFilter(this);
-        d->_isOriginShow = true;
-#endif
         window()->close();
     });
     closeOpacityAnimation->setStartValue(1);
@@ -376,38 +343,316 @@ void ElaAppBar::closeWindow()
     QPropertyAnimation* geometryAnimation = new QPropertyAnimation(window(), "geometry");
     QRect geometry = window()->geometry();
     geometryAnimation->setStartValue(geometry);
-    int targetWidth = (geometry.width() - d->_lastMinTrackWidth) * 0.7 + d->_lastMinTrackWidth;
-    int targetHeight = (geometry.height() - window()->minimumHeight()) * 0.7 + window()->minimumHeight();
-    geometryAnimation->setEndValue(QRect(geometry.center().x() - targetWidth / 2, geometry.center().y() - targetHeight / 2, targetWidth, targetHeight));
+    qreal targetWidth = (geometry.width() - d->_lastMinTrackWidth) * 0.7 + d->_lastMinTrackWidth;
+    qreal targetHeight = (geometry.height() - window()->minimumHeight()) * 0.7 + window()->minimumHeight();
+    geometryAnimation->setEndValue(QRectF(geometry.center().x() - targetWidth / 2, geometry.center().y() - targetHeight / 2, targetWidth, targetHeight));
     geometryAnimation->setEasingCurve(QEasingCurve::InOutSine);
     geometryAnimation->start(QAbstractAnimation::DeleteWhenStopped);
 }
+
+#ifdef Q_OS_WIN
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+int ElaAppBar::takeOverNativeEvent(const QByteArray& eventType, void* message, qintptr* result)
+#else
+int ElaAppBar::takeOverNativeEvent(const QByteArray& eventType, void* message, long* result)
+#endif
+{
+    Q_D(ElaAppBar);
+    if ((eventType != "windows_generic_MSG") || !message)
+    {
+        return 0;
+    }
+    const auto msg = static_cast<const MSG*>(message);
+    const HWND hwnd = msg->hwnd;
+    if (!hwnd || !msg)
+    {
+        return 0;
+    }
+    d->_currentWinID = (qint64)hwnd;
+    const UINT uMsg = msg->message;
+    const WPARAM wParam = msg->wParam;
+    const LPARAM lParam = msg->lParam;
+    switch (uMsg)
+    {
+    case WM_WINDOWPOSCHANGING:
+    {
+        WINDOWPOS* wp = reinterpret_cast<WINDOWPOS*>(lParam);
+        if (wp != nullptr && (wp->flags & SWP_NOSIZE) == 0)
+        {
+            wp->flags |= SWP_NOCOPYBITS;
+            *result = ::DefWindowProcW(hwnd, uMsg, wParam, lParam);
+            return 1;
+        }
+        return 0;
+    }
+    case WM_NCACTIVATE:
+    {
+        *result = TRUE;
+        return 1;
+    }
+    case WM_SIZE:
+    {
+        if (wParam == SIZE_RESTORED)
+        {
+            d->_changeMaxButtonAwesome(false);
+        }
+        else if (wParam == SIZE_MAXIMIZED)
+        {
+            d->_changeMaxButtonAwesome(true);
+        }
+        return 0;
+    }
+    case WM_NCCALCSIZE:
+    {
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 5, 3) && QT_VERSION <= QT_VERSION_CHECK(6, 6, 1))
+        if (wParam == FALSE)
+        {
+            return 0;
+        }
+        if (::IsZoomed(hwnd))
+        {
+            this->move(7, 7);
+            window()->setContentsMargins(8, 8 + height(), 8, 8);
+        }
+        else
+        {
+            this->move(0, 0);
+            window()->setContentsMargins(0, height(), 0, 0);
+        }
+        *result = 0;
+        return 1;
+#else
+        if (wParam == FALSE)
+        {
+            return 0;
+        }
+        RECT* clientRect = &((NCCALCSIZE_PARAMS*)(lParam))->rgrc[0];
+        if (!::IsZoomed(hwnd))
+        {
+            clientRect->top -= 1;
+            clientRect->bottom -= 1;
+        }
+        else
+        {
+            const LRESULT hitTestResult = ::DefWindowProcW(hwnd, WM_NCCALCSIZE, wParam, lParam);
+            if ((hitTestResult != HTERROR) && (hitTestResult != HTNOWHERE))
+            {
+                *result = static_cast<long>(hitTestResult);
+                return 1;
+            }
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+            auto geometry = window()->screen()->geometry();
+#else
+            QScreen* screen = qApp->screenAt(window()->geometry().center());
+            QRect geometry;
+            if (!screen)
+            {
+                screen = qApp->screenAt(QCursor::pos());
+            }
+            geometry = screen->geometry();
+#endif
+            clientRect->top = geometry.top();
+        }
+        *result = WVR_REDRAW;
+        return 1;
+#endif
+    }
+    case WM_MOVE:
+    {
+        QScreen* currentScreen = qApp->screenAt(window()->geometry().center());
+        if (currentScreen && currentScreen != d->_lastScreen)
+        {
+            if (d->_lastScreen)
+            {
+                ::SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
+                ::RedrawWindow(hwnd, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
+            }
+            d->_lastScreen = currentScreen;
+        }
+        break;
+    }
+    case WM_NCHITTEST:
+    {
+        if (d->_containsCursorToItem(d->_maxButton))
+        {
+            if (*result == HTNOWHERE)
+            {
+                if (!d->_isHoverMaxButton)
+                {
+                    d->_isHoverMaxButton = true;
+                    d->_maxButton->setIsSelected(true);
+                    d->_maxButton->update();
+                }
+                *result = HTZOOM;
+            }
+            return 1;
+        }
+        else
+        {
+            if (d->_isHoverMaxButton)
+            {
+                d->_isHoverMaxButton = false;
+                d->_maxButton->setIsSelected(false);
+                d->_maxButton->update();
+            }
+        }
+        POINT nativeLocalPos{GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+        ::ScreenToClient(hwnd, &nativeLocalPos);
+        RECT clientRect{0, 0, 0, 0};
+        ::GetClientRect(hwnd, &clientRect);
+        auto clientWidth = clientRect.right - clientRect.left;
+        auto clientHeight = clientRect.bottom - clientRect.top;
+        bool left = nativeLocalPos.x < d->_margins;
+        bool right = nativeLocalPos.x > clientWidth - d->_margins;
+        bool top = nativeLocalPos.y < d->_margins;
+        bool bottom = nativeLocalPos.y > clientHeight - d->_margins;
+        *result = 0;
+        if (!d->_pIsOnlyAllowMinAndClose && !d->_pIsFixedSize && !window()->isFullScreen() && !window()->isMaximized())
+        {
+            if (left && top)
+            {
+                *result = HTTOPLEFT;
+            }
+            else if (left && bottom)
+            {
+                *result = HTBOTTOMLEFT;
+            }
+            else if (right && top)
+            {
+                *result = HTTOPRIGHT;
+            }
+            else if (right && bottom)
+            {
+                *result = HTBOTTOMRIGHT;
+            }
+            else if (left)
+            {
+                *result = HTLEFT;
+            }
+            else if (right)
+            {
+                *result = HTRIGHT;
+            }
+            else if (top)
+            {
+                *result = HTTOP;
+            }
+            else if (bottom)
+            {
+                *result = HTBOTTOM;
+            }
+        }
+        if (0 != *result)
+        {
+            return 1;
+        }
+        if (d->_containsCursorToItem(this))
+        {
+            *result = HTCAPTION;
+            return 1;
+        }
+        *result = HTCLIENT;
+        return 1;
+    }
+    case WM_GETMINMAXINFO:
+    {
+        MINMAXINFO* minmaxInfo = reinterpret_cast<MINMAXINFO*>(lParam);
+        RECT rect;
+        SystemParametersInfo(SPI_GETWORKAREA, 0, &rect, 0);
+        d->_lastMinTrackWidth = d->_calculateMinimumWidth();
+        minmaxInfo->ptMinTrackSize.x = d->_lastMinTrackWidth * qApp->devicePixelRatio();
+        minmaxInfo->ptMinTrackSize.y = parentWidget()->minimumHeight() * qApp->devicePixelRatio();
+        minmaxInfo->ptMaxPosition.x = rect.left;
+        minmaxInfo->ptMaxPosition.y = rect.top;
+        return 1;
+    }
+    case WM_LBUTTONDBLCLK:
+    {
+        QVariantMap postData;
+        postData.insert("WMClickType", ElaAppBarType::WMLBUTTONDBLCLK);
+        ElaEventBus::getInstance()->post("WMWindowClicked", postData);
+        return 0;
+    }
+    case WM_LBUTTONDOWN:
+    {
+        QVariantMap postData;
+        postData.insert("WMClickType", ElaAppBarType::WMLBUTTONDOWN);
+        ElaEventBus::getInstance()->post("WMWindowClicked", postData);
+        return 0;
+    }
+    case WM_LBUTTONUP:
+    {
+        QVariantMap postData;
+        postData.insert("WMClickType", ElaAppBarType::WMLBUTTONUP);
+        ElaEventBus::getInstance()->post("WMWindowClicked", postData);
+        return 0;
+    }
+    case WM_NCLBUTTONDOWN:
+    {
+        QVariantMap postData;
+        postData.insert("WMClickType", ElaAppBarType::WMNCLBUTTONDOWN);
+        ElaEventBus::getInstance()->post("WMWindowClicked", postData);
+        if (d->_containsCursorToItem(d->_maxButton) || d->_pIsOnlyAllowMinAndClose)
+        {
+            return 1;
+        }
+        break;
+    }
+    case WM_NCLBUTTONUP:
+    {
+        QVariantMap postData;
+        postData.insert("WMClickType", ElaAppBarType::WMNCLBUTTONDOWN);
+        ElaEventBus::getInstance()->post("WMWindowClicked", postData);
+        if (d->_containsCursorToItem(d->_maxButton) && !d->_pIsOnlyAllowMinAndClose)
+        {
+            d->onMaxButtonClicked();
+            return 1;
+        }
+        break;
+    }
+    case WM_NCLBUTTONDBLCLK:
+    {
+        if (!d->_pIsOnlyAllowMinAndClose && !d->_pIsFixedSize)
+        {
+            return 0;
+        }
+        return 1;
+    }
+    case WM_NCRBUTTONDOWN:
+    {
+        if (wParam == HTCAPTION && !d->_pIsOnlyAllowMinAndClose)
+        {
+            d->_showSystemMenu(QCursor::pos());
+        }
+        break;
+    }
+    case WM_KEYDOWN:
+    case WM_SYSKEYDOWN:
+    {
+        if ((GetAsyncKeyState(VK_MENU) & 0x8000) && (GetAsyncKeyState(VK_SPACE) & 0x8000) && !d->_pIsOnlyAllowMinAndClose)
+        {
+            auto pos = window()->geometry().topLeft();
+            d->_showSystemMenu(QPoint(pos.x(), pos.y() + this->height()));
+        }
+        break;
+    }
+    }
+    return -1;
+}
+#endif
 
 bool ElaAppBar::eventFilter(QObject* obj, QEvent* event)
 {
     Q_D(ElaAppBar);
     switch (event->type())
     {
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 5, 3) && QT_VERSION <= QT_VERSION_CHECK(6, 6, 1))
-    case QEvent::WindowActivate:
-    {
-        HWND hwnd = reinterpret_cast<HWND>(window()->winId());
-        DWORD style = ::GetWindowLongPtr(hwnd, GWL_STYLE);
-        bool hasCaption = (style & WS_CAPTION) == WS_CAPTION;
-        if (!hasCaption)
-        {
-            QTimer::singleShot(15, this, [=] { ::SetWindowLongPtr(hwnd, GWL_STYLE, style | WS_CAPTION); });
-        }
-        break;
-    }
-#endif
     case QEvent::Resize:
     {
         QSize size = parentWidget()->size();
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 5, 3) && QT_VERSION <= QT_VERSION_CHECK(6, 6, 1))
         if (::IsZoomed((HWND)d->_currentWinID))
         {
-            this->resize(size.width() - 7, this->height());
+            this->resize(size.width() - 14, this->height());
         }
         else
         {
@@ -421,17 +666,22 @@ bool ElaAppBar::eventFilter(QObject* obj, QEvent* event)
 #ifdef Q_OS_WIN
     case QEvent::Show:
     {
-        if (d->_isOriginShow)
+        if (!d->_pIsFixedSize && !d->_pIsOnlyAllowMinAndClose)
         {
-            d->_isOriginShow = false;
-            d->_currentWinID = window()->winId();
-            QGuiApplication::instance()->installNativeEventFilter(this);
-            HWND hwnd = reinterpret_cast<HWND>(window()->winId());
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 5, 3) && QT_VERSION <= QT_VERSION_CHECK(6, 6, 1))
-            setShadow(hwnd);
-#endif
-            SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
+            HWND hwnd = (HWND)d->_currentWinID;
+            DWORD style = ::GetWindowLongPtr(hwnd, GWL_STYLE);
+            ::SetWindowLongPtr(hwnd, GWL_STYLE, style | WS_MAXIMIZEBOX | WS_THICKFRAME);
         }
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 5, 3) && QT_VERSION <= QT_VERSION_CHECK(6, 6, 1))
+        HWND hwnd = (HWND)d->_currentWinID;
+        setShadow(hwnd);
+        DWORD style = ::GetWindowLongPtr(hwnd, GWL_STYLE);
+        bool hasCaption = (style & WS_CAPTION) == WS_CAPTION;
+        if (!hasCaption)
+        {
+            ::SetWindowLongPtr(hwnd, GWL_STYLE, style | WS_CAPTION);
+        }
+#endif
         break;
     }
 #endif
@@ -446,13 +696,6 @@ bool ElaAppBar::eventFilter(QObject* obj, QEvent* event)
                 window()->showNormal();
             }
             d->onCloseButtonClicked();
-        }
-        else
-        {
-#ifdef Q_OS_WIN
-            QGuiApplication::instance()->removeNativeEventFilter(this);
-            d->_isOriginShow = true;
-#endif
         }
         return true;
     }
@@ -556,300 +799,4 @@ bool ElaAppBar::eventFilter(QObject* obj, QEvent* event)
     }
     }
     return QObject::eventFilter(obj, event);
-}
-
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-bool ElaAppBar::nativeEventFilter(const QByteArray& eventType, void* message, qintptr* result)
-#else
-bool ElaAppBar::nativeEventFilter(const QByteArray& eventType, void* message, long* result)
-#endif
-{
-#ifdef Q_OS_WIN
-    Q_D(ElaAppBar);
-    if ((eventType != "windows_generic_MSG") || !message)
-    {
-        return false;
-    }
-    const auto msg = static_cast<const MSG*>(message);
-    const HWND hwnd = msg->hwnd;
-    if (!hwnd || !msg)
-    {
-        return false;
-    }
-    const qint64 wid = reinterpret_cast<qint64>(hwnd);
-    if (wid != d->_currentWinID)
-    {
-        return false;
-    }
-    const UINT uMsg = msg->message;
-    const WPARAM wParam = msg->wParam;
-    const LPARAM lParam = msg->lParam;
-    switch (uMsg)
-    {
-    case WM_WINDOWPOSCHANGING:
-    {
-        WINDOWPOS* wp = reinterpret_cast<WINDOWPOS*>(lParam);
-        if (wp != nullptr && (wp->flags & SWP_NOSIZE) == 0)
-        {
-            wp->flags |= SWP_NOCOPYBITS;
-            *result = ::DefWindowProcW(hwnd, uMsg, wParam, lParam);
-            return true;
-        }
-        return false;
-    }
-    case WM_NCACTIVATE:
-    {
-        *result = TRUE;
-        return true;
-    }
-    case WM_SIZE:
-    {
-        if (wParam == SIZE_RESTORED)
-        {
-            d->_changeMaxButtonAwesome(false);
-        }
-        else if (wParam == SIZE_MAXIMIZED)
-        {
-            d->_changeMaxButtonAwesome(true);
-        }
-        return false;
-    }
-    case WM_NCCALCSIZE:
-    {
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 5, 3) && QT_VERSION <= QT_VERSION_CHECK(6, 6, 1))
-        if (wParam == FALSE)
-        {
-            return false;
-        }
-        if (::IsZoomed(hwnd))
-        {
-            this->move(0, 7);
-            window()->setContentsMargins(8, 8 + height(), 8, 8);
-        }
-        else
-        {
-            this->move(0, 0);
-            window()->setContentsMargins(0, height(), 0, 0);
-        }
-        *result = 0;
-        return true;
-#else
-        if (wParam == FALSE)
-        {
-            return false;
-        }
-        RECT* clientRect = &((NCCALCSIZE_PARAMS*)(lParam))->rgrc[0];
-        if (!::IsZoomed(hwnd))
-        {
-            clientRect->top -= 1;
-            clientRect->bottom -= 1;
-        }
-        else
-        {
-            const LRESULT hitTestResult = ::DefWindowProcW(hwnd, WM_NCCALCSIZE, wParam, lParam);
-            if ((hitTestResult != HTERROR) && (hitTestResult != HTNOWHERE))
-            {
-                *result = static_cast<long>(hitTestResult);
-                return true;
-            }
-// qDebug() << clientRect->left << clientRect->top << clientRect->bottom << clientRect->right;
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-            auto geometry = window()->screen()->geometry();
-#else
-            QScreen* screen = qApp->screenAt(window()->geometry().center());
-            QRect geometry;
-            if (!screen)
-            {
-                screen = qApp->screenAt(QCursor::pos());
-            }
-            geometry = screen->geometry();
-#endif
-            clientRect->top = geometry.top();
-        }
-        *result = WVR_REDRAW;
-        return true;
-#endif
-    }
-    case WM_MOVE:
-    {
-        QScreen* currentScreen = qApp->screenAt(window()->geometry().center());
-        if (currentScreen && currentScreen != d->_lastScreen)
-        {
-            if (d->_lastScreen)
-            {
-                ::SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
-                ::RedrawWindow(hwnd, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
-            }
-            d->_lastScreen = currentScreen;
-        }
-        break;
-    }
-    case WM_NCHITTEST:
-    {
-        if (d->_containsCursorToItem(d->_maxButton))
-        {
-            if (*result == HTNOWHERE)
-            {
-                if (!d->_isHoverMaxButton)
-                {
-                    d->_isHoverMaxButton = true;
-                    d->_maxButton->setIsSelected(true);
-                    d->_maxButton->update();
-                }
-                *result = HTZOOM;
-            }
-            return true;
-        }
-        else
-        {
-            if (d->_isHoverMaxButton)
-            {
-                d->_isHoverMaxButton = false;
-                d->_maxButton->setIsSelected(false);
-                d->_maxButton->update();
-            }
-        }
-        POINT nativeLocalPos{GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
-        ::ScreenToClient(hwnd, &nativeLocalPos);
-        RECT clientRect{0, 0, 0, 0};
-        ::GetClientRect(hwnd, &clientRect);
-        auto clientWidth = clientRect.right - clientRect.left;
-        auto clientHeight = clientRect.bottom - clientRect.top;
-        bool left = nativeLocalPos.x < d->_margins;
-        bool right = nativeLocalPos.x > clientWidth - d->_margins;
-        bool top = nativeLocalPos.y < d->_margins;
-        bool bottom = nativeLocalPos.y > clientHeight - d->_margins;
-        *result = 0;
-        if (!d->_pIsOnlyAllowMinAndClose && !d->_pIsFixedSize && !window()->isFullScreen() && !window()->isMaximized())
-        {
-            if (left && top)
-            {
-                *result = HTTOPLEFT;
-            }
-            else if (left && bottom)
-            {
-                *result = HTBOTTOMLEFT;
-            }
-            else if (right && top)
-            {
-                *result = HTTOPRIGHT;
-            }
-            else if (right && bottom)
-            {
-                *result = HTBOTTOMRIGHT;
-            }
-            else if (left)
-            {
-                *result = HTLEFT;
-            }
-            else if (right)
-            {
-                *result = HTRIGHT;
-            }
-            else if (top)
-            {
-                *result = HTTOP;
-            }
-            else if (bottom)
-            {
-                *result = HTBOTTOM;
-            }
-        }
-        if (0 != *result)
-        {
-            return true;
-        }
-        if (d->_containsCursorToItem(this))
-        {
-            *result = HTCAPTION;
-            return true;
-        }
-        *result = HTCLIENT;
-        return true;
-    }
-    case WM_GETMINMAXINFO:
-    {
-        MINMAXINFO* minmaxInfo = reinterpret_cast<MINMAXINFO*>(lParam);
-        RECT rect;
-        SystemParametersInfo(SPI_GETWORKAREA, 0, &rect, 0);
-        d->_lastMinTrackWidth = d->_calculateMinimumWidth();
-        minmaxInfo->ptMinTrackSize.x = d->_lastMinTrackWidth * qApp->devicePixelRatio();
-        minmaxInfo->ptMinTrackSize.y = parentWidget()->minimumHeight() * qApp->devicePixelRatio();
-        minmaxInfo->ptMaxPosition.x = rect.left;
-        minmaxInfo->ptMaxPosition.y = rect.top;
-        return true;
-    }
-    case WM_LBUTTONDBLCLK:
-    {
-        QVariantMap postData;
-        postData.insert("WMClickType", ElaAppBarType::WMLBUTTONDBLCLK);
-        ElaEventBus::getInstance()->post("WMWindowClicked", postData);
-        return false;
-    }
-    case WM_LBUTTONDOWN:
-    {
-        QVariantMap postData;
-        postData.insert("WMClickType", ElaAppBarType::WMLBUTTONDOWN);
-        ElaEventBus::getInstance()->post("WMWindowClicked", postData);
-        return false;
-    }
-    case WM_LBUTTONUP:
-    {
-        QVariantMap postData;
-        postData.insert("WMClickType", ElaAppBarType::WMLBUTTONUP);
-        ElaEventBus::getInstance()->post("WMWindowClicked", postData);
-        return false;
-    }
-    case WM_NCLBUTTONDOWN:
-    {
-        QVariantMap postData;
-        postData.insert("WMClickType", ElaAppBarType::WMNCLBUTTONDOWN);
-        ElaEventBus::getInstance()->post("WMWindowClicked", postData);
-        if (d->_containsCursorToItem(d->_maxButton) || d->_pIsOnlyAllowMinAndClose)
-        {
-            return true;
-        }
-        break;
-    }
-    case WM_NCLBUTTONUP:
-    {
-        QVariantMap postData;
-        postData.insert("WMClickType", ElaAppBarType::WMNCLBUTTONDOWN);
-        ElaEventBus::getInstance()->post("WMWindowClicked", postData);
-        if (d->_containsCursorToItem(d->_maxButton) && !d->_pIsOnlyAllowMinAndClose)
-        {
-            d->onMaxButtonClicked();
-            return true;
-        }
-        break;
-    }
-    case WM_NCLBUTTONDBLCLK:
-    {
-        if (!d->_pIsOnlyAllowMinAndClose && !d->_pIsFixedSize)
-        {
-            return false;
-        }
-        return true;
-    }
-    case WM_NCRBUTTONDOWN:
-    {
-        if (wParam == HTCAPTION && !d->_pIsOnlyAllowMinAndClose)
-        {
-            d->_showSystemMenu(QCursor::pos());
-        }
-        break;
-    }
-    case WM_KEYDOWN:
-    case WM_SYSKEYDOWN:
-    {
-        if ((GetAsyncKeyState(VK_MENU) & 0x8000) && (GetAsyncKeyState(VK_SPACE) & 0x8000) && !d->_pIsOnlyAllowMinAndClose)
-        {
-            auto pos = window()->geometry().topLeft();
-            d->_showSystemMenu(QPoint(pos.x(), pos.y() + this->height()));
-        }
-        break;
-    }
-    }
-#endif
-    return QWidget::nativeEvent(eventType, message, result);
 }

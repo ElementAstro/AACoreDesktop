@@ -33,6 +33,8 @@ class T_TerminalPage;
 
 class T_LogPanelPage;
 
+class PluginManagerPage;
+
 class T_Setting;
 class T_I18NPage;
 
@@ -80,6 +82,8 @@ private:
     T_WebSocketClientPage *_webSocketClientPage{nullptr};
     T_HttpClientPage *_httpClientPage{nullptr};
     T_TcpClientPage *_tcpClientPage{nullptr};
+
+    PluginManagerPage *_pluginManagerPage{nullptr};
 
     QTranslator translator;
     T_I18NPage *i18nManager;  // I18nManager 组件实例
