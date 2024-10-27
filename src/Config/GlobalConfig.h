@@ -14,7 +14,6 @@
 #include <optional>
 #include <unordered_map>
 
-
 class GlobalConfig : public QObject {
     Q_OBJECT
 
@@ -24,11 +23,11 @@ public:
     template <typename T>
     void defineStore(const QString &storeName, const std::function<T()> &setup);
 
-    template <typename T>
-    std::optional<T> useStore(QStringView storeName) const;
+    std::optional<QMap<QString, QVariant>> useStore(
+        QStringView storeName) const;
 
     template <typename T>
-    void setState(QStringView storeName, QStringView key, const T &value);
+    void setState(const QString &storeName, const QString &key, const T &value);
 
     std::optional<QVariant> getState(QStringView storeName,
                                      QStringView key) const;
@@ -89,40 +88,23 @@ void GlobalConfig::defineStore(const QString &storeName,
 }
 
 template <typename T>
-std::optional<T> GlobalConfig::useStore(QStringView storeName) const {
-    if (!m_stores.contains(storeName.toString())) {
-        qWarning() << "Store" << storeName << "does not exist!";
-        return std::nullopt;
-    }
-
-    QJsonObject storeObject = m_stores[storeName.toString()].toObject();
-    QVariantMap variantMap = storeObject.toVariantMap();
-    T result;
-    for (auto it = variantMap.begin(); it != variantMap.end(); ++it) {
-        result[it.key()] = it.value().value<typename T::mapped_type>();
-    }
-    return result;
-}
-
-template <typename T>
-void GlobalConfig::setState(QStringView storeName, QStringView key,
+void GlobalConfig::setState(const QString &storeName, const QString &key,
                             const T &value) {
-    if (!m_stores.contains(storeName.toString())) {
+    if (!m_stores.contains(storeName)) {
         qWarning() << "Store" << storeName << "does not exist!";
         return;
     }
 
-    QJsonObject storeObject = m_stores[storeName.toString()].toObject();
-    storeObject[key.toString()] =
-        QJsonValue::fromVariant(QVariant::fromValue(value));
-    m_stores[storeName.toString()] = storeObject;
+    QJsonObject storeObject = m_stores[storeName].toObject();
+    storeObject[key] = QJsonValue::fromVariant(QVariant::fromValue(value));
+    m_stores[storeName] = storeObject;
     saveConfig();
-    emit stateChanged(storeName.toString(), key.toString());
+    emit stateChanged(storeName, key);
 
     // 通知订阅者
-    if (m_subscribers.count(storeName.toString()) > 0) {
-        for (const auto &callback : m_subscribers[storeName.toString()]) {
-            (*callback.second)(key.toString());
+    if (m_subscribers.count(storeName) > 0) {
+        for (const auto &callback : m_subscribers[storeName]) {
+            (*callback.second)(key);
         }
     }
 }

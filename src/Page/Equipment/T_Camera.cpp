@@ -15,6 +15,7 @@
 #include "Def.h"
 #include "ElaComboBox.h"
 #include "ElaIconButton.h"
+#include "ElaPushButton.h"
 #include "ElaSlider.h"
 #include "ElaSpinBox.h"
 #include "ElaTabWidget.h"

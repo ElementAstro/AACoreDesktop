@@ -32,6 +32,8 @@
 #include "Page/Equipment/T_Switch.h"
 #include "Page/Equipment/T_Telescope.h"
 
+#include "Page/Helper/HelpWindow.h"
+
 #include "Page/Image/T_ImageViewer.h"
 
 #include "Page/Log/T_LogPanel.h"
@@ -154,6 +156,7 @@ void MainWindow::initContent() {
     _webSocketClientPage = new T_WebSocketClientPage(this);
     _tcpClientPage = new T_TcpClientPage(this);
     _pluginManagerPage = new PluginManagerPage(this);
+    _helpWindow = new HelpWindow(this);
 
     // GraphicsView
     auto scene = new ElaGraphicsScene(this);
@@ -192,8 +195,7 @@ void MainWindow::initContent() {
 
     QString pluginKey;
     addExpanderNode("Plugin", pluginKey, ElaIconType::Plug);
-    addPageNode("Plugin", _pluginManagerPage, pluginKey,
-                ElaIconType::Plug);
+    addPageNode("Plugin", _pluginManagerPage, pluginKey, ElaIconType::Plug);
 
     addPageNode("TargetSearch", _targetSearchPage,
                 ElaIconType::MagnifyingGlassPlus);
@@ -221,6 +223,10 @@ void MainWindow::initContent() {
     addPageNode("TcpClient", _tcpClientPage, debugKey, ElaIconType::Plug);
     addPageNode("WebSocketClient", _webSocketClientPage, debugKey,
                 ElaIconType::Cloud);
+
+    QString helpKey;
+    addExpanderNode("Help", helpKey, ElaIconType::Question);
+    addPageNode("Help", _helpWindow, helpKey, ElaIconType::Book);
 
     addFooterNode("About", nullptr, _aboutKey, 0, ElaIconType::User);
     auto *aboutPage = new T_About();

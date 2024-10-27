@@ -1,13 +1,13 @@
 #ifndef T_SERIALDEBUGPAGE_H
 #define T_SERIALDEBUGPAGE_H
 
-#include "T_BasePage.h"
-
 #include <QDateTime>
 #include <QFile>
 #include <QSerialPort>
 #include <QSerialPortInfo>
 #include <QWidget>
+
+#include "T_BasePage.h"
 
 class ElaCheckBox;
 class ElaPushButton;
@@ -30,14 +30,21 @@ private slots:
     void updateSerialPorts();
     void on_clearScreenButton_clicked();
     void on_saveLogButton_clicked();
+    void handleReconnect();
 
 private:
     void setupUI();
+    void loadSendHistory();
+    void saveSendHistory();
+    void keyPressEvent(QKeyEvent *event) override;
 
     QSerialPort *serial;
     QFile logFile;
     quint64 receivedBytes = 0;
     quint64 sentBytes = 0;
+
+    QStringList sendHistory;
+    int currentHistoryIndex = -1;
 
     // GUI 控件
     ElaPushButton *openSerialButton;
@@ -45,6 +52,8 @@ private:
     ElaPushButton *clearScreenButton;
     ElaPushButton *saveLogButton;
     ElaPushButton *refreshSerialButton;
+    ElaCheckBox *autoReconnectCheckBox;
+    ElaCheckBox *newlineCheckBox;
 
     ElaComboBox *serialPortComboBox;
     ElaComboBox *baudRateComboBox;
@@ -58,8 +67,6 @@ private:
 
     ElaText *rxLabel;
     ElaText *txLabel;
-
-    ElaCheckBox *timestampCheckBox;
 };
 
 #endif  // T_SERIALDEBUGPAGE_H

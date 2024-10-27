@@ -80,7 +80,8 @@ void T_ConfigPanel::loadStoreData(const QString &storeName) {
     m_keyValueModel->clear();
     m_keyValueModel->setHorizontalHeaderLabels({"Key", "Value"});
 
-    auto store = globalConfig.useStore<QMap<QString, QVariant>>(storeName);
+    /*
+    auto store = globalConfig.useStore(storeName).value<QMap<QString, QVariant>>();
     if (store) {
         int row = 0;
         for (auto it = store->constBegin(); it != store->constEnd(); ++it) {
@@ -91,6 +92,8 @@ void T_ConfigPanel::loadStoreData(const QString &storeName) {
             ++row;
         }
     }
+    */
+    
 }
 
 void T_ConfigPanel::onSaveButtonClicked() {

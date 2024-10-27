@@ -27,6 +27,16 @@ constexpr int kMessageBarDuration = 2000;
 }  // namespace
 
 T_Home::T_Home(QWidget *parent) : ElaScrollPage(parent) {
+    initializeCentralWidget();
+    initializeCards();
+    initializeMenu();
+    initializeMessageBar();
+    qDebug() << "天文摄影软件初始化成功";
+}
+
+T_Home::~T_Home() = default;
+
+void T_Home::initializeCentralWidget() {
     auto *centralWidget = new QWidget(this);
     centralWidget->setWindowTitle("Home");
     auto *centerVLayout = new QVBoxLayout(centralWidget);
@@ -39,7 +49,14 @@ T_Home::T_Home(QWidget *parent) : ElaScrollPage(parent) {
 
     auto *flowLayoutText = new ElaText("天文摄影工具", this);
 
-    // 天文摄影工具卡片
+    centerVLayout->addWidget(backgroundCard);
+    centerVLayout->addWidget(flowLayoutText);
+    centerVLayout->setSpacing(kSpacing20);
+    centerVLayout->addStretch();
+    addCentralWidget(centralWidget);
+}
+
+void T_Home::initializeCards() {
     auto *starStackerCard = new ElaPopularCard(this);
     connect(
         starStackerCard, &ElaPopularCard::popularCardButtonClicked, this,
@@ -51,8 +68,8 @@ T_Home::T_Home(QWidget *parent) : ElaScrollPage(parent) {
     starStackerCard->setSubTitle("5.0⭐ 图像处理");
     starStackerCard->setInteractiveTips("立即使用");
     starStackerCard->setDetailedText(
-        "强大的星轨叠加工具，自动对齐和合并多张长曝"
-        "光图像，创造出令人惊叹的星轨效果。");
+        "强大的星轨叠加工具，自动对齐和合并多张长曝光图像，创造出令人惊叹的星轨"
+        "效果。");
 
     auto *deepSkyCard = new ElaPopularCard(this);
     connect(deepSkyCard, &ElaPopularCard::popularCardButtonClicked, this,
@@ -82,8 +99,8 @@ T_Home::T_Home(QWidget *parent) : ElaScrollPage(parent) {
     processingCard->setCardPixmap(QPixmap(":/Resource/Image/Processing.png"));
     processingCard->setInteractiveTips("开始处理");
     processingCard->setDetailedText(
-        "强大的后期处理工具，包括去噪、锐化、色彩校正"
-        "等功能，让您的天文照片更加出色。");
+        "强大的后期处理工具，包括去噪、锐化、色彩校正等功能，让您的天文照片更加"
+        "出色。");
 
     auto *flowLayout = new ElaFlowLayout(
         kElaFlowLayoutMargin, kElaFlowLayoutSpacing, kElaFlowLayoutSpacing);
@@ -93,12 +110,9 @@ T_Home::T_Home(QWidget *parent) : ElaScrollPage(parent) {
     flowLayout->addWidget(planetaryCard);
     flowLayout->addWidget(processingCard);
 
-    centerVLayout->addWidget(backgroundCard);
-    centerVLayout->addWidget(flowLayoutText);
+    auto *centralWidget = findChild<QWidget *>();
+    auto *centerVLayout = centralWidget->findChild<QVBoxLayout *>();
     centerVLayout->addLayout(flowLayout);
-    centerVLayout->setSpacing(kSpacing20);
-    centerVLayout->addStretch();
-    addCentralWidget(centralWidget);
 
     // 滚动区域中的卡片
     auto *tutorialCard = new ElaAcrylicUrlCard(this);
@@ -113,11 +127,11 @@ T_Home::T_Home(QWidget *parent) : ElaScrollPage(parent) {
     communityCard->setTitle("天文摄影社区");
     communityCard->setSubTitle("分享作品，交流技巧");
 
-    auto *cardScrollArea = new ElaScrollArea(backgroundCard);
+    auto *cardScrollArea = new ElaScrollArea(centralWidget);
     cardScrollArea->setWidgetResizable(true);
     cardScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     cardScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    cardScrollArea->setIsGrabGesture(Qt::Horizontal, true);
+    cardScrollArea->setIsGrabGesture(Qt::Horizontal, static_cast<qreal>(true));
     auto *cardScrollAreaWidget = new QWidget(this);
     cardScrollAreaWidget->setStyleSheet("background-color:transparent;");
     cardScrollArea->setWidget(cardScrollAreaWidget);
@@ -128,11 +142,13 @@ T_Home::T_Home(QWidget *parent) : ElaScrollPage(parent) {
     cardScrollAreaWidgetLayout->addWidget(communityCard);
     cardScrollAreaWidgetLayout->addStretch();
 
+    auto *backgroundCard = findChild<ElaImageCard *>();
     auto *backgroundLayout = new QHBoxLayout(backgroundCard);
     backgroundLayout->addWidget(cardScrollArea);
     backgroundLayout->setContentsMargins(0, 0, 0, 0);
+}
 
-    // 菜单
+void T_Home::initializeMenu() {
     _homeMenu = new ElaMenu(this);
     auto *viewMenu = _homeMenu->addMenu(ElaIconType::Cubes, "查看");
     viewMenu->addAction("图库");
@@ -152,14 +168,12 @@ T_Home::T_Home(QWidget *parent) : ElaScrollPage(parent) {
 
     _homeMenu->addElaIconAction(ElaIconType::Copy, "复制");
     _homeMenu->addElaIconAction(ElaIconType::MagnifyingGlassPlus, "显示设置");
-
-    // 初始化提示
-    ElaMessageBar::success(ElaMessageBarType::BottomRight, "Success",
-                           "欢迎使用天文摄影软件!", kMessageBarDuration);
-    qDebug() << "天文摄影软件初始化成功";
 }
 
-T_Home::~T_Home() = default;
+void T_Home::initializeMessageBar() {
+    ElaMessageBar::success(ElaMessageBarType::BottomRight, "Success",
+                           "欢迎使用天文摄影软件!", kMessageBarDuration);
+}
 
 void T_Home::mouseReleaseEvent(QMouseEvent *event) {
     switch (event->button()) {

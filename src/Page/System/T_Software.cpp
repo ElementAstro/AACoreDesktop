@@ -2,7 +2,9 @@
 #include "Utils/Software.h"
 
 #include <QApplication>
+#include <QFileDialog>
 #include <QMessageBox>
+#include <QProgressBar>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -11,7 +13,6 @@
 #include "ElaListView.h"
 #include "ElaPushButton.h"
 #include "ElaText.h"
-
 
 T_SoftwarePage::T_SoftwarePage(QWidget *parent) : T_BasePage(parent) {
     // 创建搜索框和标签
@@ -43,6 +44,13 @@ T_SoftwarePage::T_SoftwarePage(QWidget *parent) : T_BasePage(parent) {
     // 创建安装和卸载按钮
     auto *installButton = new ElaPushButton("安装", this);
     auto *uninstallButton = new ElaPushButton("卸载", this);
+    auto *exportButton = new ElaPushButton("导出列表", this);
+
+    // 创建进度条和状态栏
+    progressBar = new QProgressBar(this);
+    progressBar->setRange(0, 100);
+    progressBar->setValue(0);
+    statusLabel = new ElaText("状态: 就绪", this);
 
     // 创建主布局并添加控件
     auto *mainLayout = new QVBoxLayout(this);
@@ -55,6 +63,9 @@ T_SoftwarePage::T_SoftwarePage(QWidget *parent) : T_BasePage(parent) {
     mainLayout->addWidget(appListView);
     mainLayout->addWidget(installButton);
     mainLayout->addWidget(uninstallButton);
+    mainLayout->addWidget(exportButton);
+    mainLayout->addWidget(progressBar);
+    mainLayout->addWidget(statusLabel);
 
     auto *centralWidget = new QWidget(this);
     centralWidget->setWindowTitle("软件管理");
@@ -76,6 +87,8 @@ T_SoftwarePage::T_SoftwarePage(QWidget *parent) : T_BasePage(parent) {
             &T_SoftwarePage::onInstallButtonClicked);
     connect(uninstallButton, &ElaPushButton::clicked, this,
             &T_SoftwarePage::onUninstallButtonClicked);
+    connect(exportButton, &ElaPushButton::clicked, this,
+            &T_SoftwarePage::onExportButtonClicked);
 }
 
 T_SoftwarePage::~T_SoftwarePage() { delete softwareManager; }
@@ -186,4 +199,34 @@ void T_SoftwarePage::onInstallButtonClicked() {
 void T_SoftwarePage::onUninstallButtonClicked() {
     // 卸载软件的逻辑
     QMessageBox::information(this, "卸载", "卸载软件功能尚未实现。");
+}
+
+void T_SoftwarePage::onExportButtonClicked() {
+    QString fileName = QFileDialog::getSaveFileName(this, "导出软件列表", "",
+                                                    "CSV 文件 (*.csv)");
+    if (fileName.isEmpty()) {
+        return;
+    }
+
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::warning(this, "导出失败", "无法打开文件进行写入。");
+        return;
+    }
+
+    QTextStream out(&file);
+    out << "名称,版本,安装位置,发布者,安装日期\n";
+    for (const auto &software : softwareData) {
+        out << QString("%1,%2,%3,%4,%5\n")
+                   .arg(software.displayName)
+                   .arg(software.displayVersion)
+                   .arg(software.installLocation.isEmpty()
+                            ? "未知"
+                            : software.installLocation)
+                   .arg(software.publisher)
+                   .arg(software.installDate);
+    }
+
+    file.close();
+    QMessageBox::information(this, "导出成功", "软件列表已成功导出。");
 }

@@ -3,6 +3,7 @@
 #include <QLayout>
 #include <QPropertyAnimation>
 
+#include "ElaApplication.h"
 #include "ElaBaseListView.h"
 #include "ElaCustomWidget.h"
 #include "ElaFooterDelegate.h"
@@ -49,12 +50,15 @@ void ElaNavigationBarPrivate::onNavigationOpenNewWindow(QString nodeKey)
     {
         return;
     }
-    ElaCustomWidget* floatWidget = new ElaCustomWidget(q);
     QWidget* widget = static_cast<QWidget*>(meta->newInstance());
-    floatWidget->setWindowIcon(widget->windowIcon());
-    floatWidget->setWindowTitle(widget->windowTitle());
-    floatWidget->setCentralWidget(widget);
-    floatWidget->show();
+    if (widget)
+    {
+        ElaCustomWidget* floatWidget = new ElaCustomWidget(q);
+        floatWidget->setWindowIcon(widget->windowIcon());
+        floatWidget->setWindowTitle(widget->windowTitle());
+        floatWidget->setCentralWidget(widget);
+        floatWidget->show();
+    }
 }
 
 void ElaNavigationBarPrivate::onNavigationRouteBack(QVariantMap routeData)

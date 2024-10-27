@@ -21,35 +21,37 @@ public:
     explicit T_LogPanelPage(QWidget *parent = nullptr);
     ~T_LogPanelPage();
 
-    // 添加日志消息
     void addLogMessage(const QString &message, LogLevel level = Info);
-
-    // 重定向 Qt 的调试信息
     static void messageHandler(QtMsgType type,
                                const QMessageLogContext &context,
                                const QString &msg);
 
 private slots:
-    void filterLogs();             // 过滤日志
-    void clearLogs();              // 清空日志
-    void saveLogs();               // 保存日志
-    void searchLogs();             // 搜索日志
-    void autoScrollToggled(bool);  // 切换自动滚动
-    void truncateLogs();           // 自动截断日志
+    void filterLogs();
+    void clearLogs();
+    void saveLogs();
+    void saveLogsAsHtml();  // 新增保存为HTML功能
+    void searchLogs();
+    void autoScrollToggled(bool);
+    void pauseLoggingToggled(bool);  // 新增暂停日志记录功能
+    void truncateLogs();
 
 private:
-    ElaPlainTextEdit *logTextEdit;    // 日志显示区域
-    ElaComboBox *filterComboBox;      // 日志级别过滤下拉框
-    ElaPushButton *clearButton;       // 清空日志按钮
-    ElaPushButton *saveButton;        // 保存日志按钮
-    ElaLineEdit *searchLineEdit;      // 搜索输入框
-    ElaPushButton *searchButton;      // 搜索按钮
-    ElaCheckBox *autoScrollCheckBox;  // 自动滚动选项
-    QMutex logMutex;                  // 日志锁，保证线程安全
-    QTimer *truncateTimer;            // 日志自动截断定时器
-    LogLevel currentFilterLevel;      // 当前过滤级别
-    bool autoScrollEnabled;           // 是否启用自动滚动
-    const int MaxLogLines = 1000;     // 最大日志行数，超过时截断
+    ElaPlainTextEdit *logTextEdit;
+    ElaComboBox *filterComboBox;
+    ElaPushButton *clearButton;
+    ElaPushButton *saveButton;
+    ElaPushButton *saveHtmlButton;  // 新增保存HTML按钮
+    ElaLineEdit *searchLineEdit;
+    ElaPushButton *searchButton;
+    ElaCheckBox *autoScrollCheckBox;
+    ElaCheckBox *pauseLoggingCheckBox;  // 新增暂停日志复选框
+    QMutex logMutex;
+    QTimer *truncateTimer;
+    LogLevel currentFilterLevel;
+    bool autoScrollEnabled;
+    bool loggingPaused;  // 新增是否暂停日志记录
+    const int MaxLogLines = 1000;
 };
 
 #endif  // T_LOGPANEL_H

@@ -17,6 +17,10 @@ public:
     explicit T_SystemInfoPage(QWidget *parent = nullptr);
     ~T_SystemInfoPage();
 
+    void setupCpuTab();
+    void setupMemoryTab();
+    void setupNetworkTab();
+
 private:
     ElaTabWidget *tabWidget;
 

@@ -10,16 +10,19 @@ class PluginConfigDialog : public QDialog {
     Q_OBJECT
 
 public:
-    explicit PluginConfigDialog(const QString& pluginName, QWidget *parent = nullptr);
+    explicit PluginConfigDialog(const QString &pluginName,
+                                QWidget *parent = nullptr);
 
 private:
-    ElaLineEdit *configField1;  // 配置字段示例
-    ElaLineEdit *configField2;  // 配置字段示例
+    ElaLineEdit *configField1;
+    ElaLineEdit *configField2;
 
-    void setupUI(const QString& pluginName);
+    void setupUI(const QString &pluginName);
+    void resetFields();
 
 private slots:
-    void onSaveClicked();  // 点击保存按钮的槽函数
+    void onSaveClicked();
+    void onResetClicked();
 };
 
-#endif // PLUGINCONFIGDIALOG_H
+#endif  // PLUGINCONFIGDIALOG_H

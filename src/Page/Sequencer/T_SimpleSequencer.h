@@ -2,17 +2,12 @@
 #ifndef TARGETSETWIDGET_H
 #define TARGETSETWIDGET_H
 
-#include <qstandarditemmodel.h>
-#include <QBarSeries>
-#include <QBarSet>
-#include <QChart>
 #include <QChartView>
 #include <QDateTimeEdit>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QStandardItemModel>
 #include <QVBoxLayout>
-#include <QValueAxis>
 #include <QWidget>
 
 #include "T_BasePage.h"
@@ -32,17 +27,11 @@ public:
 
 private slots:
     void onBackButtonClicked();
-
     void onAddButtonClicked();
-
     void onDeleteButtonClicked();
-
     void onResetButtonClicked();
-
     void onMoveUpButtonClicked();
-
     void onMoveDownButtonClicked();
-
     void onStartButtonClicked();
 
 private:
@@ -61,25 +50,21 @@ private:
 
     QStandardItemModel *model;
 
-    // Top section widgets
     ElaToggleSwitch *coolCameraSwitch;
     ElaToggleSwitch *unparkMountSwitch;
     ElaToggleSwitch *meridianFlipSwitch;
     ElaToggleSwitch *warmCameraSwitch;
     ElaToggleSwitch *parkMountSwitch;
 
-    // Middle section widgets
     ElaSpinBox *delayStartSpinBox;
     ElaComboBox *sequenceModeCombo;
     ElaLineEdit *estimatedDownloadTimeEdit;
     QDateTimeEdit *estimatedFinishTimeEdit;
     QDateTimeEdit *estFinishTimeThisTargetEdit;
 
-    // Bottom section widgets
     ElaTableView *targetTable;
     QChartView *chartView;
 
-    // Control buttons
     ElaPushButton *backButton;
     ElaPushButton *addButton;
     ElaPushButton *deleteButton;

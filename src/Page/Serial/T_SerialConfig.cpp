@@ -22,39 +22,39 @@
 #include "ElaText.h"
 
 void GetSerialPortTask::run() {
-    // 执行一些任务
     SerialPortScanner scanner;
     auto result = scanner.scanPorts();
-    QList<QString> names;
-    for (auto &port : result) {
+    QStringList names;
+    for (const auto &port : result) {
         names.append(port.portName);
     }
     emit scanFinished(names);
 }
 
 T_SerialConfig::T_SerialConfig(QWidget *parent) : T_BasePage(parent) {
+    setupUi();
+    setupConnections();
+
+    loadConfig();
+}
+
+T_SerialConfig::~T_SerialConfig() = default;
+
+void T_SerialConfig::setupUi() {
+    auto *mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(10, 10, 10, 10);
+    mainLayout->setSpacing(15);
+
+    // ComPort section
     auto *comLabel = new ElaText("Com端口", this);
     comLabel->setTextPixelSize(15);
     comComboBox = new ElaComboBox(this);
+    mainLayout->addWidget(comLabel);
+    mainLayout->addWidget(comComboBox);
 
-    auto *task = new GetSerialPortTask();
-    auto *thread = new QThread();
-    task->moveToThread(thread);
-    connect(thread, &QThread::started, task, &GetSerialPortTask::run);
-    connect(task, &GetSerialPortTask::scanFinished, this,
-            &T_SerialConfig::updateComPorts);
-    connect(task, &GetSerialPortTask::scanFinished, thread, &QThread::quit);
-    connect(task, &GetSerialPortTask::scanFinished, task,
-            &GetSerialPortTask::deleteLater);
-    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
-    thread->start();
-
-    connect(comComboBox, QOverload<int>::of(&ElaComboBox::currentIndexChanged),
-            this, &T_SerialConfig::onComPortChanged);
-
+    // DC channels group
     auto *dcGroupBox = new QGroupBox("DC Channels", this);
     auto *dcLayout = new QFormLayout();
-
     dcLabels = {"DC1", "DC2", "DC3", "DC4", "DC5", "DC6", "DC7"};
     QStringList dcDescriptions = {"主镜供电",   "主相机供电", "赤道仪供电",
                                   "滤镜轮供电", "电调供电",   "N/C",
@@ -74,12 +74,12 @@ T_SerialConfig::T_SerialConfig(QWidget *parent) : T_BasePage(parent) {
         title->setTextPointSize(12);
         dcLayout->addRow(title, widget);
     }
-
     dcGroupBox->setLayout(dcLayout);
+    mainLayout->addWidget(dcGroupBox);
 
+    // PWM channels group
     auto *pwmGroupBox = new QGroupBox("PWM Channels", this);
     auto *pwmLayout = new QFormLayout();
-
     pwmLabels = {"PWM1", "PWM2", "PWM3"};
     QStringList pwmDescriptions = {"主镜自动应加热", "平场板亮度",
                                    "主机自动应加热"};
@@ -98,36 +98,23 @@ T_SerialConfig::T_SerialConfig(QWidget *parent) : T_BasePage(parent) {
         title->setTextPointSize(12);
         pwmLayout->addRow(title, widget);
     }
-
     pwmGroupBox->setLayout(pwmLayout);
+    mainLayout->addWidget(pwmGroupBox);
 
-    auto *imageLabel = new ElaText(this);
-    QPixmap pixmap(":/images/ascom_logo.png");
-    imageLabel->setPixmap(pixmap.scaled(50, 50, Qt::KeepAspectRatio));
-
-    auto *okButton = new ElaPushButton("OK", this);
-    connect(okButton, &ElaPushButton::clicked, this,
-            &T_SerialConfig::onOkClicked);
-
-    auto *cancelButton = new ElaPushButton("Cancel", this);
-    connect(cancelButton, &ElaPushButton::clicked, this,
-            &T_SerialConfig::onCancelClicked);
-
-    auto *traceCheckBox = new ElaCheckBox("Trace on", this);
-
+    // Control buttons and image
     auto *buttonLayout = new QHBoxLayout();
+    auto *traceCheckBox = new ElaCheckBox("Trace on", this);
+    auto *okButton = new ElaPushButton("OK", this);
+    auto *cancelButton = new ElaPushButton("Cancel", this);
+
     buttonLayout->addWidget(traceCheckBox);
     buttonLayout->addStretch();
     buttonLayout->addWidget(okButton);
     buttonLayout->addWidget(cancelButton);
 
-    auto *mainLayout = new QVBoxLayout(this);
-    mainLayout->addWidget(comLabel);
-    mainLayout->addWidget(comComboBox);
-    mainLayout->addWidget(dcGroupBox);
-    mainLayout->addWidget(pwmGroupBox);
-    mainLayout->addWidget(imageLabel);
+    // Final layout assembly
     mainLayout->addLayout(buttonLayout);
+    setLayout(mainLayout);
 
     auto *centralWidget = new QWidget(this);
     centralWidget->setWindowTitle("AACore配置");
@@ -135,18 +122,30 @@ T_SerialConfig::T_SerialConfig(QWidget *parent) : T_BasePage(parent) {
     centerLayout->addLayout(mainLayout);
     centerLayout->setContentsMargins(0, 0, 0, 0);
     addCentralWidget(centralWidget, true, true, 0);
-
-    loadConfig();
 }
 
-T_SerialConfig::~T_SerialConfig() {}
+void T_SerialConfig::setupConnections() {
+    connect(comComboBox, QOverload<int>::of(&ElaComboBox::currentIndexChanged),
+            this, &T_SerialConfig::onComPortChanged);
 
-void T_SerialConfig::onOkClicked() {
-    QMessageBox::information(this, "OK", "Configuration has been saved.");
+    auto *task = new GetSerialPortTask();
+    auto *thread = new QThread();
+    task->moveToThread(thread);
+    connect(thread, &QThread::started, task, &GetSerialPortTask::run);
+    connect(task, &GetSerialPortTask::scanFinished, this,
+            &T_SerialConfig::updateComPorts);
+    connect(task, &GetSerialPortTask::scanFinished, thread, &QThread::quit);
+    connect(task, &GetSerialPortTask::scanFinished, task,
+            &GetSerialPortTask::deleteLater);
+    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+    thread->start();
 }
+
+void T_SerialConfig::onOkClicked() { saveConfig(); }
 
 void T_SerialConfig::onCancelClicked() {
-    QMessageBox::warning(this, "Cancel", "Configuration has been canceled.");
+    QMessageBox::information(this, "Cancel",
+                             "Configuration has been canceled.");
     close();
 }
 
@@ -159,35 +158,25 @@ void T_SerialConfig::updateComPorts(const QStringList &ports) {
 
 void T_SerialConfig::saveConfig() {
     QJsonObject config;
-
-    // 保存当前选中的串口
     config["comPort"] = comComboBox->currentText();
-
-    // 保存DC通道配置信息
     QJsonArray dcArray;
     for (int i = 0; i < dcLineEditList.size(); ++i) {
         QJsonObject dcItem;
-        dcItem["label"] = dcLabels[i];  // Label like "DC1", "DC2", etc.
-        dcItem["value"] = dcLineEditList[i]->text();  // Value from lineEdit
-        dcItem["enabled"] =
-            dcCheckBoxList[i]->isChecked();  // Enabled state from checkbox
+        dcItem["label"] = dcLabels[i];
+        dcItem["value"] = dcLineEditList[i]->text();
+        dcItem["enabled"] = dcCheckBoxList[i]->isChecked();
         dcArray.append(dcItem);
     }
     config["dcChannels"] = dcArray;
-
-    // 保存PWM通道配置信息
     QJsonArray pwmArray;
     for (int i = 0; i < pwmLineEditList.size(); ++i) {
         QJsonObject pwmItem;
-        pwmItem["label"] = pwmLabels[i];  // Label like "PWM1", "PWM2", etc.
-        pwmItem["value"] = pwmLineEditList[i]->text();  // Value from lineEdit
-        pwmItem["enabled"] =
-            pwmCheckBoxList[i]->isChecked();  // Enabled state from checkbox
+        pwmItem["label"] = pwmLabels[i];
+        pwmItem["value"] = pwmLineEditList[i]->text();
+        pwmItem["enabled"] = pwmCheckBoxList[i]->isChecked();
         pwmArray.append(pwmItem);
     }
     config["pwmChannels"] = pwmArray;
-
-    // 将JSON对象写入文件
     QFile file("config.json");
     if (file.open(QIODevice::WriteOnly)) {
         file.write(QJsonDocument(config).toJson());
@@ -201,14 +190,11 @@ void T_SerialConfig::saveConfig() {
 
 void T_SerialConfig::loadConfig() {
     QFile file("config.json");
-    if (!file.exists()) {
-        return;  // 文件不存在时直接返回
-    }
-
+    if (!file.exists())
+        return;
     if (file.open(QIODevice::ReadOnly)) {
         QByteArray data = file.readAll();
         file.close();
-
         QJsonDocument doc = QJsonDocument::fromJson(data);
         QJsonObject config = doc.object();
 
@@ -219,7 +205,7 @@ void T_SerialConfig::loadConfig() {
             comComboBox->setCurrentIndex(comIndex);
         }
 
-        // 加载DC通道配置信息
+        // 加载 DC 通道配置信息
         QJsonArray dcArray = config["dcChannels"].toArray();
         for (int i = 0; i < dcArray.size() && i < dcLineEditList.size(); ++i) {
             QJsonObject dcItem = dcArray[i].toObject();
@@ -227,7 +213,7 @@ void T_SerialConfig::loadConfig() {
             dcCheckBoxList[i]->setChecked(dcItem["enabled"].toBool());
         }
 
-        // 加载PWM通道配置信息
+        // 加载 PWM 通道配置信息
         QJsonArray pwmArray = config["pwmChannels"].toArray();
         for (int i = 0; i < pwmArray.size() && i < pwmLineEditList.size();
              ++i) {

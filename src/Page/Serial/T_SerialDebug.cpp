@@ -1,85 +1,98 @@
 #include "T_SerialDebug.h"
 
+#include <QFile>
 #include <QFileDialog>
+#include <QGroupBox>
 #include <QHBoxLayout>
+#include <QKeyEvent>
+#include <QList>
 #include <QMessageBox>
+#include <QSerialPortInfo>
+#include <QString>
 #include <QTextStream>
+#include <QTimer>
 #include <QVBoxLayout>
 
-#include "ElaPushButton.h"
-#include "ElaText.h"
 #include "ElaCheckBox.h"
 #include "ElaComboBox.h"
 #include "ElaLineEdit.h"
 #include "ElaPlainTextEdit.h"
+#include "ElaPushButton.h"
+#include "ElaText.h"
+
+constexpr int RECONNECT_DELAY_MS = 1000;
 
 T_SerialDebugPage::T_SerialDebugPage(QWidget *parent)
-    : T_BasePage(parent), serial(new QSerialPort(this)) {
-    setupUI();  // 创建界面
+    : T_BasePage(parent),
+      serial(new QSerialPort(this)),
+      openSerialButton(nullptr),
+      sendButton(nullptr),
+      clearScreenButton(nullptr),
+      saveLogButton(nullptr),
+      refreshSerialButton(nullptr),
+      autoReconnectCheckBox(nullptr),
+      newlineCheckBox(nullptr),
+      serialPortComboBox(nullptr),
+      baudRateComboBox(nullptr),
+      dataBitsComboBox(nullptr),
+      stopBitsComboBox(nullptr),
+      parityComboBox(nullptr),
+      flowControlComboBox(nullptr),
+      sendLineEdit(nullptr),
+      receiveTextEdit(nullptr),
+      rxLabel(nullptr),
+      txLabel(nullptr) {
+    setupUI();          // 创建界面
+    loadSendHistory();  // 加载发送历史
 
     // 自动检测串口
     updateSerialPorts();
 
-    // 当串口有数据可读时，连接到处理函数
     connect(serial, &QSerialPort::readyRead, this,
             &T_SerialDebugPage::readSerialData);
-
-    // 检测串口设备的插拔
     connect(refreshSerialButton, &ElaPushButton::clicked, this,
             &T_SerialDebugPage::updateSerialPorts);
+
+    connect(serial, &QSerialPort::errorOccurred, this, [this]() {
+        if (autoReconnectCheckBox->isChecked() && !serial->isOpen()) {
+            QTimer::singleShot(RECONNECT_DELAY_MS, this,
+                               &T_SerialDebugPage::handleReconnect);
+        }
+    });
 }
 
-T_SerialDebugPage::~T_SerialDebugPage() {}
+T_SerialDebugPage::~T_SerialDebugPage() {
+    saveSendHistory();  // 保存发送历史
+}
 
 void T_SerialDebugPage::setupUI() {
-    // 创建主布局
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    auto *mainLayout = new QVBoxLayout(this);
 
-    // 上部的串口设置区域
-    QHBoxLayout *settingsLayout = new QHBoxLayout();
+    // 串口设置区域
+    auto *settingsGroup = new QGroupBox("串口设置");
+    auto *settingsLayout = new QHBoxLayout(settingsGroup);
 
-    // 串口选择
     serialPortComboBox = new ElaComboBox();
     refreshSerialButton = new ElaPushButton("刷新串口");
     settingsLayout->addWidget(serialPortComboBox);
     settingsLayout->addWidget(refreshSerialButton);
 
-    // 波特率选择
     baudRateComboBox = new ElaComboBox();
     baudRateComboBox->addItem("9600", QSerialPort::Baud9600);
     baudRateComboBox->addItem("115200", QSerialPort::Baud115200);
     settingsLayout->addWidget(baudRateComboBox);
 
-    // 数据位选择
     dataBitsComboBox = new ElaComboBox();
     dataBitsComboBox->addItem("8", QSerialPort::Data8);
-    dataBitsComboBox->addItem("7", QSerialPort::Data7);
     settingsLayout->addWidget(dataBitsComboBox);
 
-    // 停止位选择
-    stopBitsComboBox = new ElaComboBox();
-    stopBitsComboBox->addItem("1", QSerialPort::OneStop);
-    stopBitsComboBox->addItem("2", QSerialPort::TwoStop);
-    settingsLayout->addWidget(stopBitsComboBox);
-
-    // 校验位选择
     parityComboBox = new ElaComboBox();
     parityComboBox->addItem("None", QSerialPort::NoParity);
-    parityComboBox->addItem("Even", QSerialPort::EvenParity);
-    parityComboBox->addItem("Odd", QSerialPort::OddParity);
     settingsLayout->addWidget(parityComboBox);
 
-    // 流控制选择
-    flowControlComboBox = new ElaComboBox();
-    flowControlComboBox->addItem("None", QSerialPort::NoFlowControl);
-    flowControlComboBox->addItem("Hardware", QSerialPort::HardwareControl);
-    flowControlComboBox->addItem("Software", QSerialPort::SoftwareControl);
-    settingsLayout->addWidget(flowControlComboBox);
+    mainLayout->addWidget(settingsGroup);
 
-    // 添加到主布局
-    mainLayout->addLayout(settingsLayout);
-
-    // 打开/关闭串口按钮
+    // 打开/关闭串口
     openSerialButton = new ElaPushButton("打开串口");
     mainLayout->addWidget(openSerialButton);
     connect(openSerialButton, &ElaPushButton::clicked, this,
@@ -91,29 +104,32 @@ void T_SerialDebugPage::setupUI() {
     mainLayout->addWidget(receiveTextEdit);
 
     // 发送区
-    QHBoxLayout *sendLayout = new QHBoxLayout();
+    auto *sendLayout = new QHBoxLayout();
     sendLineEdit = new ElaLineEdit();
     sendButton = new ElaPushButton("发送");
+    newlineCheckBox = new ElaCheckBox("换行发送");
     sendLayout->addWidget(sendLineEdit);
     sendLayout->addWidget(sendButton);
+    sendLayout->addWidget(newlineCheckBox);
     mainLayout->addLayout(sendLayout);
+
     connect(sendButton, &ElaPushButton::clicked, this,
             &T_SerialDebugPage::on_sendButton_clicked);
 
-    // 时间戳选择
-    timestampCheckBox = new ElaCheckBox("添加时间戳");
-    mainLayout->addWidget(timestampCheckBox);
+    // 时间戳选择和重连选项
+    autoReconnectCheckBox = new ElaCheckBox("自动重连");
+    mainLayout->addWidget(autoReconnectCheckBox);
 
-    // 接收、发送字节数显示
-    QHBoxLayout *statusLayout = new QHBoxLayout();
+    // 状态显示
+    auto *statusLayout = new QHBoxLayout();
     rxLabel = new ElaText("RX: 0");
     txLabel = new ElaText("TX: 0");
     statusLayout->addWidget(rxLabel);
     statusLayout->addWidget(txLabel);
     mainLayout->addLayout(statusLayout);
 
-    // 清屏、保存日志按钮
-    QHBoxLayout *actionLayout = new QHBoxLayout();
+    // 清屏和保存日志按钮
+    auto *actionLayout = new QHBoxLayout();
     clearScreenButton = new ElaPushButton("清屏");
     saveLogButton = new ElaPushButton("保存日志");
     actionLayout->addWidget(clearScreenButton);
@@ -125,6 +141,8 @@ void T_SerialDebugPage::setupUI() {
     connect(saveLogButton, &ElaPushButton::clicked, this,
             &T_SerialDebugPage::on_saveLogButton_clicked);
 
+    setLayout(mainLayout);
+
     auto *centralWidget = new QWidget(this);
     centralWidget->setWindowTitle("AACore调试终端");
     auto *centerLayout = new QVBoxLayout(centralWidget);
@@ -135,8 +153,8 @@ void T_SerialDebugPage::setupUI() {
 
 void T_SerialDebugPage::updateSerialPorts() {
     serialPortComboBox->clear();
-    const auto ports = QSerialPortInfo::availablePorts();
-    for (const QSerialPortInfo &info : ports) {
+    const auto AVAILABLE_PORTS = QSerialPortInfo::availablePorts();
+    for (const QSerialPortInfo &info : AVAILABLE_PORTS) {
         serialPortComboBox->addItem(info.portName());
     }
 }
@@ -145,59 +163,35 @@ void T_SerialDebugPage::on_openSerialButton_clicked() {
     if (serial->isOpen()) {
         serial->close();
         openSerialButton->setText("打开串口");
-        return;
-    }
-
-    // 设置串口参数
-    serial->setPortName(serialPortComboBox->currentText());
-    serial->setBaudRate(static_cast<QSerialPort::BaudRate>(
-        baudRateComboBox->currentData().toInt()));
-    serial->setDataBits(static_cast<QSerialPort::DataBits>(
-        dataBitsComboBox->currentData().toInt()));
-    serial->setParity(static_cast<QSerialPort::Parity>(
-        parityComboBox->currentData().toInt()));
-    serial->setStopBits(static_cast<QSerialPort::StopBits>(
-        stopBitsComboBox->currentData().toInt()));
-    serial->setFlowControl(static_cast<QSerialPort::FlowControl>(
-        flowControlComboBox->currentData().toInt()));
-
-    if (serial->open(QIODevice::ReadWrite)) {
-        openSerialButton->setText("关闭串口");
-        receivedBytes = 0;
-        sentBytes = 0;
-        rxLabel->setText("RX: 0");
-        txLabel->setText("TX: 0");
     } else {
-        QMessageBox::critical(this, "错误", "无法打开串口");
+        serial->setPortName(serialPortComboBox->currentText());
+        serial->setBaudRate(static_cast<QSerialPort::BaudRate>(
+            baudRateComboBox->currentData().toInt()));
+        if (serial->open(QIODevice::ReadWrite)) {
+            openSerialButton->setText("关闭串口");
+        } else {
+            QMessageBox::critical(this, "错误", "无法打开串口");
+        }
     }
 }
 
 void T_SerialDebugPage::on_sendButton_clicked() {
     if (serial->isOpen()) {
         QString data = sendLineEdit->text();
-        if (!data.isEmpty()) {
-            serial->write(data.toUtf8());
-            sentBytes += data.size();
-            txLabel->setText(QString("TX: %1").arg(sentBytes));
+        if (newlineCheckBox->isChecked()) {
+            data += "\r\n";
         }
+        serial->write(data.toUtf8());
+        sentBytes += data.size();
+        txLabel->setText(QString("TX: %1").arg(sentBytes));
     }
 }
 
 void T_SerialDebugPage::readSerialData() {
-    if (serial->isOpen()) {
-        QByteArray data = serial->readAll();
-        receivedBytes += data.size();
-        rxLabel->setText(QString("RX: %1").arg(receivedBytes));
-
-        QString receivedData;
-        if (timestampCheckBox->isChecked()) {
-            QString timestamp = QDateTime::currentDateTime().toString(
-                "yyyy-MM-dd hh:mm:ss.zzz");
-            receivedData.append("[" + timestamp + "] ");
-        }
-        receivedData.append(QString::fromUtf8(data));
-        receiveTextEdit->insertPlainText(receivedData);
-    }
+    QByteArray data = serial->readAll();
+    receivedBytes += data.size();
+    rxLabel->setText(QString("RX: %1").arg(receivedBytes));
+    receiveTextEdit->appendPlainText(QString::fromUtf8(data));
 }
 
 void T_SerialDebugPage::on_clearScreenButton_clicked() {
@@ -205,19 +199,62 @@ void T_SerialDebugPage::on_clearScreenButton_clicked() {
 }
 
 void T_SerialDebugPage::on_saveLogButton_clicked() {
-    QString fileName =
-        QFileDialog::getSaveFileName(this, "保存日志", "", "文本文件 (*.txt)");
+    QString fileName = QFileDialog::getSaveFileName(
+        this, "保存日志", "", "文本文件 (*.txt);;CSV文件 (*.csv)");
     if (fileName.isEmpty()) {
         return;
     }
 
     QFile file(fileName);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream out(&file);
+        out << receiveTextEdit->toPlainText();
+        file.close();
+    } else {
         QMessageBox::critical(this, "错误", "无法保存文件");
-        return;
     }
+}
 
-    QTextStream out(&file);
-    out << receiveTextEdit->toPlainText();
-    file.close();
+void T_SerialDebugPage::handleReconnect() {
+    if (!serial->isOpen()) {
+        on_openSerialButton_clicked();  // 尝试重新打开串口
+    }
+}
+
+void T_SerialDebugPage::loadSendHistory() {
+    QFile historyFile("send_history.txt");
+    if (historyFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream inputStream(&historyFile);
+        while (!inputStream.atEnd()) {
+            sendHistory.append(inputStream.readLine());
+        }
+        historyFile.close();
+    }
+}
+
+void T_SerialDebugPage::saveSendHistory() {
+    QFile historyFile("send_history.txt");
+    if (historyFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream outputStream(&historyFile);
+        for (const QString &entry : std::as_const(sendHistory)) {
+            outputStream << entry << "\n";
+        }
+        historyFile.close();
+    }
+}
+
+void T_SerialDebugPage::keyPressEvent(QKeyEvent *event) {
+    if (event->key() == Qt::Key_Up) {
+        if (currentHistoryIndex > 0) {
+            currentHistoryIndex--;
+            sendLineEdit->setText(sendHistory.at(currentHistoryIndex));
+        }
+    } else if (event->key() == Qt::Key_Down) {
+        if (currentHistoryIndex < sendHistory.size() - 1) {
+            currentHistoryIndex++;
+            sendLineEdit->setText(sendHistory.at(currentHistoryIndex));
+        } else {
+            sendLineEdit->clear();
+        }
+    }
 }

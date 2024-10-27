@@ -8,9 +8,13 @@
 
 #else
 #include <signal.h>
+#include <sys/resource.h>
+#include <sys/times.h>
+#include <unistd.h>
 #include <QDir>
 #include <QFile>
 #include <QTextStream>
+
 
 #endif
 
@@ -129,6 +133,7 @@ bool ProcessManager::killProcess(int processID) {
 #endif
 }
 
+// 设置进程优先级
 bool ProcessManager::setProcessPriority(int processID, int priority) {
 #ifdef _WIN32
     HANDLE hProcess = OpenProcess(PROCESS_SET_INFORMATION, FALSE, processID);
@@ -140,5 +145,107 @@ bool ProcessManager::setProcessPriority(int processID, int priority) {
     return false;
 #else
     return setpriority(PRIO_PROCESS, processID, priority) == 0;
+#endif
+}
+
+// 暂停进程
+bool ProcessManager::pauseProcess(int processID) {
+#ifdef _WIN32
+    HANDLE hProcess = OpenProcess(PROCESS_SUSPEND_RESUME, FALSE, processID);
+    if (hProcess) {
+        typedef LONG(NTAPI * NtSuspendProcess)(IN HANDLE ProcessHandle);
+        NtSuspendProcess pfnNtSuspendProcess = (NtSuspendProcess)GetProcAddress(
+            GetModuleHandleA("ntdll.dll"), "NtSuspendProcess");
+        if (pfnNtSuspendProcess) {
+            pfnNtSuspendProcess(hProcess);
+            CloseHandle(hProcess);
+            return true;
+        }
+    }
+    return false;
+#else
+    return kill(processID, SIGSTOP) == 0;
+#endif
+}
+
+// 恢复进程
+bool ProcessManager::resumeProcess(int processID) {
+#ifdef _WIN32
+    HANDLE hProcess = OpenProcess(PROCESS_SUSPEND_RESUME, FALSE, processID);
+    if (hProcess) {
+        typedef LONG(NTAPI * NtResumeProcess)(IN HANDLE ProcessHandle);
+        NtResumeProcess pfnNtResumeProcess = (NtResumeProcess)GetProcAddress(
+            GetModuleHandleA("ntdll.dll"), "NtResumeProcess");
+        if (pfnNtResumeProcess) {
+            pfnNtResumeProcess(hProcess);
+            CloseHandle(hProcess);
+            return true;
+        }
+    }
+    return false;
+#else
+    return kill(processID, SIGCONT) == 0;
+#endif
+}
+
+// 获取进程 CPU 使用率
+double ProcessManager::getProcessCpuUsage(int processID) {
+#ifdef _WIN32
+    FILETIME creationTime, exitTime, kernelTime, userTime;
+    HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
+                                  FALSE, processID);
+    if (hProcess) {
+        if (GetProcessTimes(hProcess, &creationTime, &exitTime, &kernelTime,
+                            &userTime)) {
+            ULARGE_INTEGER kTime, uTime;
+            kTime.LowPart = kernelTime.dwLowDateTime;
+            kTime.HighPart = kernelTime.dwHighDateTime;
+            uTime.LowPart = userTime.dwLowDateTime;
+            uTime.HighPart = userTime.dwHighDateTime;
+            CloseHandle(hProcess);
+            return (kTime.QuadPart + uTime.QuadPart) / 10000.0;
+        }
+        CloseHandle(hProcess);
+    }
+    return 0.0;
+#else
+    struct tms timeSample;
+    clock_t now;
+    now = times(&timeSample);
+    return (timeSample.tms_utime + timeSample.tms_stime) /
+           (double)sysconf(_SC_CLK_TCK);
+#endif
+}
+
+// 获取进程内存使用率
+double ProcessManager::getProcessMemoryUsage(int processID) {
+#ifdef _WIN32
+    PROCESS_MEMORY_COUNTERS pmc;
+    HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
+                                  FALSE, processID);
+    if (hProcess) {
+        if (GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc))) {
+            CloseHandle(hProcess);
+            return pmc.WorkingSetSize / 1024.0 / 1024.0;  // 转换为 MB
+        }
+        CloseHandle(hProcess);
+    }
+    return 0.0;
+#else
+    QFile statusFile("/proc/" + QString::number(processID) + "/status");
+    if (statusFile.open(QIODevice::ReadOnly)) {
+        QTextStream in(&statusFile);
+        QString line;
+        while (in.readLineInto(&line)) {
+            if (line.startsWith("VmRSS:")) {
+                QStringList parts = line.split(QRegExp("\\s+"));
+                if (parts.size() >= 2) {
+                    return parts[1].toDouble() / 1024.0;  // 转换为 MB
+                }
+            }
+        }
+        statusFile.close();
+    }
+    return 0.0;
 #endif
 }

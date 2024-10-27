@@ -7,7 +7,6 @@
 #include <QWidget>
 
 #include "T_BasePage.h"
-
 #include "Utils/Process.h"
 
 class ElaComboBox;
@@ -26,10 +25,13 @@ private slots:
     void refreshProcessList();
     void startNewProcess();
     void killSelectedProcess();
+    void pauseSelectedProcess();
+    void resumeSelectedProcess();
     void filterProcesses(const QString &text);
     void showProcessDetails(const QModelIndex &index);
     void showContextMenu(const QPoint &pos);
     void setProcessPriority(int priority);
+    void exportProcessList();
 
 private:
     void setupUI();
@@ -41,6 +43,9 @@ private:
     ElaPushButton *refreshButton;
     ElaPushButton *startButton;
     ElaPushButton *killButton;
+    ElaPushButton *pauseButton;
+    ElaPushButton *resumeButton;
+    ElaPushButton *exportButton;
     ElaLineEdit *searchBox;
     ElaComboBox *refreshRateComboBox;
     QTimer *refreshTimer;

@@ -35,12 +35,15 @@ class T_LogPanelPage;
 
 class PluginManagerPage;
 
+class HelpWindow;
+
 class T_Setting;
 class T_I18NPage;
 
 class T_WebSocketClientPage;
 class T_HttpClientPage;
 class T_TcpClientPage;
+
 class MainWindow : public ElaWindow {
     Q_OBJECT
 
@@ -84,6 +87,8 @@ private:
     T_TcpClientPage *_tcpClientPage{nullptr};
 
     PluginManagerPage *_pluginManagerPage{nullptr};
+
+    HelpWindow *_helpWindow{nullptr};
 
     QTranslator translator;
     T_I18NPage *i18nManager;  // I18nManager 组件实例

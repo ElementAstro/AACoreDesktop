@@ -1,55 +1,60 @@
 #include "PluginManagerPage.h"
 #include "PluginPage.h"
 
+#include <QFrame>
 #include <QVBoxLayout>
 
 #include "ElaLineEdit.h"
 #include "ElaListView.h"
 
+
 PluginManagerPage::PluginManagerPage(QWidget *parent) : QWidget(parent) {
-    setupUI();          // 设置界面
-    populatePlugins();  // 填充插件列表
+    setupUI();
+    populatePlugins();
 }
 
 void PluginManagerPage::setupUI() {
-    // 初始化 QSplitter（用于左右布局）
     splitter = new QSplitter(Qt::Horizontal, this);
 
-    // 创建插件列表
     pluginListView = new ElaListView(this);
     model = new QStandardItemModel(this);
     pluginListView->setModel(model);
 
-    // 创建右侧详细信息视图
     stackedWidget = new QStackedWidget(this);
 
-    // 搜索框
     searchBox = new ElaLineEdit(this);
     searchBox->setPlaceholderText("Search Plugins...");
     connect(searchBox, &QLineEdit::textChanged, this,
             &PluginManagerPage::onSearchTextChanged);
 
-    // 将插件列表和详细信息页面添加到 QSplitter
-    splitter->addWidget(pluginListView);  // 左侧插件列表
-    splitter->addWidget(stackedWidget);   // 右侧详情视图
-    splitter->setStretchFactor(0, 1);     // 左侧占 1/4 宽度
-    splitter->setStretchFactor(1, 3);     // 右侧占 3/4 宽度
+    // Add a dividing line for visual separation
+    QFrame *line = new QFrame(this);
+    line->setFrameShape(QFrame::HLine);
+    line->setFrameShadow(QFrame::Sunken);
 
-    // 布局管理器
+    splitter->addWidget(pluginListView);
+    splitter->addWidget(stackedWidget);
+    splitter->setStretchFactor(0, 1);
+    splitter->setStretchFactor(1, 3);
+
     QVBoxLayout *layout = new QVBoxLayout(this);
-    layout->addWidget(searchBox);  // 搜索框在顶部
-    layout->addWidget(splitter);   // splitter 在下方
+    layout->addWidget(searchBox);
+    layout->addWidget(line);  // Add dividing line under search box
+    layout->addWidget(splitter);
+    setLayout(layout);
 
-    setLayout(layout);  // 设置布局
+    // Add a default no-selection label in the stacked widget
+    noSelectionLabel =
+        new QLabel("Please select a plugin to view details.", this);
+    noSelectionLabel->setAlignment(Qt::AlignCenter);
+    stackedWidget->addWidget(noSelectionLabel);
 
-    // 连接插件选择信号和槽函数
     connect(pluginListView->selectionModel(),
             &QItemSelectionModel::currentChanged, this,
             &PluginManagerPage::onPluginSelected);
 }
 
 void PluginManagerPage::populatePlugins() {
-    // 添加插件列表项
     QList<QStandardItem *> pluginItems;
     pluginItems.append(new QStandardItem("10 Micron Tools"));
     pluginItems.append(new QStandardItem("ASA Tools"));
@@ -57,12 +62,11 @@ void PluginManagerPage::populatePlugins() {
     pluginItems.append(new QStandardItem("Autofocus Report Analysis"));
     pluginItems.append(new QStandardItem("Connector"));
 
-    // 将插件添加到模型
     for (auto &item : pluginItems) {
         model->appendRow(item);
     }
 
-    // 为不同的插件创建详细页面并添加到 QStackedWidget
+    // Create plugin pages dynamically
     stackedWidget->addWidget(
         new PluginPage("10 Micron Tools", "George Hilios", "2.1.0.2",
                        "10 Micron Mount Tools, including model building",
@@ -80,36 +84,45 @@ void PluginManagerPage::populatePlugins() {
     stackedWidget->addWidget(
         new PluginPage("Connector", "AuthorZ", "0.9.1",
                        "Generic connector for various plugins", QStringList()));
+
+    // Select the first item by default
+    if (model->rowCount() > 0) {
+        pluginListView->setCurrentIndex(model->index(0, 0));
+    }
 }
 
 void PluginManagerPage::onPluginSelected(const QModelIndex &current,
                                          const QModelIndex &previous) {
     Q_UNUSED(previous);
 
-    // 获取当前选中的行号
     int index = current.row();
-
-    // 检查索引是否有效
     if (index >= 0 && index < stackedWidget->count()) {
-        // 切换到对应的插件详细页面
-        stackedWidget->setCurrentIndex(index);
+        stackedWidget->setCurrentIndex(index +
+                                       1);  // Adjust for no-selection label
+    } else {
+        stackedWidget->setCurrentWidget(noSelectionLabel);
     }
 }
 
-// 处理搜索框文本变化
 void PluginManagerPage::onSearchTextChanged(const QString &text) {
     filterPlugins(text);
 }
 
-// 过滤插件列表
 void PluginManagerPage::filterPlugins(const QString &filterText) {
-    // 遍历插件列表并隐藏不匹配的插件
+    bool anyVisible = false;
     for (int i = 0; i < model->rowCount(); ++i) {
         QStandardItem *pluginItem = model->item(i);
         if (pluginItem) {
             bool match =
                 pluginItem->text().toLower().contains(filterText.toLower());
-            pluginListView->setRowHidden(i, !match);  // 隐藏不匹配的项
+            pluginListView->setRowHidden(i, !match);
+            anyVisible |= match;
         }
+    }
+    if (!anyVisible) {
+        stackedWidget->setCurrentWidget(noSelectionLabel);
+    } else if (pluginListView->selectionModel()->currentIndex().isValid()) {
+        onPluginSelected(pluginListView->selectionModel()->currentIndex(),
+                         QModelIndex());
     }
 }

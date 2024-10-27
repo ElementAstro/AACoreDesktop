@@ -7,6 +7,7 @@
 #include <QPropertyAnimation>
 #include <QTimer>
 
+#include "ElaApplication.h"
 #include "ElaDockWidgetPrivate.h"
 #include "ElaDockWidgetTitleBar.h"
 #include "ElaTheme.h"
@@ -21,25 +22,19 @@ ElaDockWidget::ElaDockWidget(QWidget* parent, Qt::WindowFlags flags)
 
     d->_titleBar = new ElaDockWidgetTitleBar(this);
     setTitleBarWidget(d->_titleBar);
-#ifndef Q_OS_WIN
-    setStyleSheet("#ElaDockWidget{background-color:transparent;}");
-    connect(this, &ElaDockWidget::topLevelChanged, this, [=](bool topLevel) {
-        if (topLevel)
-        {
-            d->_titleBar->setContentsMargins(6, 6, 6, 0);
-            widget()->setContentsMargins(6, 0, 6, 6);
-        }
-        else
-        {
-            d->_titleBar->setContentsMargins(0, 0, 0, 0);
-            widget()->setContentsMargins(0, 0, 0, 0);
-        }
-    });
-    setAttribute(Qt::WA_TranslucentBackground);
-#endif
+
     // 主题变更动画
     d->_themeMode = eTheme->getThemeMode();
     connect(eTheme, &ElaTheme::themeModeChanged, d, &ElaDockWidgetPrivate::onThemeModeChanged);
+
+    d->_isEnableMica = eApp->getIsEnableMica();
+    connect(eApp, &ElaApplication::pIsEnableMicaChanged, this, [=]() {
+        d->_isEnableMica = eApp->getIsEnableMica();
+        update();
+    });
+    connect(this, &ElaDockWidget::topLevelChanged, this, [=](bool topLevel) {
+        eApp->syncMica(this, topLevel);
+    });
 }
 
 ElaDockWidget::ElaDockWidget(const QString& title, QWidget* parent, Qt::WindowFlags flags)
@@ -54,25 +49,30 @@ ElaDockWidget::~ElaDockWidget()
 
 void ElaDockWidget::paintEvent(QPaintEvent* event)
 {
-#ifndef Q_OS_WIN
     Q_D(ElaDockWidget);
-    QPainter painter(this);
-    painter.save();
-    painter.setRenderHints(QPainter::Antialiasing);
     if (isFloating())
     {
-        // 高性能阴影
-        eTheme->drawEffectShadow(&painter, rect(), d->_shadowBorderWidth, 6);
-        //背景
-        painter.setPen(ElaThemeColor(d->_themeMode, PopupBorder));
-        painter.setBrush(ElaThemeColor(d->_themeMode, DialogBase));
-        QRect foregroundRect(d->_shadowBorderWidth, d->_shadowBorderWidth, width() - 2 * d->_shadowBorderWidth, height() - 2 * d->_shadowBorderWidth);
-        painter.drawRoundedRect(foregroundRect, 5, 5);
-    }
-    painter.restore();
+        QPainter painter(this);
+        painter.save();
+        painter.setRenderHints(QPainter::Antialiasing);
+#ifdef Q_OS_WIN
+        // 背景
+        if (!d->_isEnableMica)
+        {
+            painter.setPen(Qt::NoPen);
+            painter.setBrush(ElaThemeColor(d->_themeMode, DialogBase));
+            painter.drawRect(rect());
+        }
 #else
-    QDockWidget::paintEvent(event);
+        // 背景
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(d->_isEnableMica ? Qt::transparent : ElaThemeColor(d->_themeMode, DialogBase));
+        QRect foregroundRect(d->_shadowBorderWidth, d->_shadowBorderWidth, width() - 2 * d->_shadowBorderWidth, height() - 2 * d->_shadowBorderWidth);
+        painter.drawRect(rect());
 #endif
+        painter.restore();
+    }
+    QDockWidget::paintEvent(event);
 }
 
 #ifdef Q_OS_WIN

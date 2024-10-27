@@ -30,6 +30,21 @@ void GlobalConfig::saveConfig() const noexcept {
     }
 }
 
+std::optional<QMap<QString, QVariant>> GlobalConfig::useStore(QStringView storeName) const {
+    if (!m_stores.contains(storeName)) {
+        qWarning() << "Store" << storeName << "does not exist!";
+        return std::nullopt;
+    }
+
+    QJsonObject storeObject = m_stores[storeName].toObject();
+    QMap<QString, QVariant> storeMap;
+    for (auto it = storeObject.begin(); it != storeObject.end(); ++it) {
+        storeMap.insert(it.key(), it.value().toVariant());
+    }
+
+    return storeMap;
+}
+
 std::optional<QVariant> GlobalConfig::getState(QStringView storeName,
                                                QStringView key) const {
     if (!m_stores.contains(storeName.toString())) {

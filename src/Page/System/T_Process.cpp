@@ -1,5 +1,6 @@
 #include "T_Process.hpp"
 
+#include <QFileDialog>
 #include <QHeaderView>
 #include <QInputDialog>
 #include <QMessageBox>
@@ -9,7 +10,7 @@
 #include "ElaLineEdit.h"
 #include "ElaMenu.h"
 #include "ElaPushButton.h"
-#include "ElaTableView.h" 
+#include "ElaTableView.h"
 #include "ElaText.h"
 
 T_ProcessPage::T_ProcessPage(QWidget *parent)
@@ -19,6 +20,9 @@ T_ProcessPage::T_ProcessPage(QWidget *parent)
       refreshButton(new ElaPushButton("Refresh", this)),
       startButton(new ElaPushButton("Start Process", this)),
       killButton(new ElaPushButton("Kill Process", this)),
+      pauseButton(new ElaPushButton("Pause Process", this)),
+      resumeButton(new ElaPushButton("Resume Process", this)),
+      exportButton(new ElaPushButton("Export List", this)),
       refreshTimer(new QTimer(this)),
       contextMenu(new ElaMenu(this)) {
     setupUI();
@@ -31,6 +35,12 @@ T_ProcessPage::T_ProcessPage(QWidget *parent)
             &T_ProcessPage::startNewProcess);
     connect(killButton, &ElaPushButton::clicked, this,
             &T_ProcessPage::killSelectedProcess);
+    connect(pauseButton, &ElaPushButton::clicked, this,
+            &T_ProcessPage::pauseSelectedProcess);
+    connect(resumeButton, &ElaPushButton::clicked, this,
+            &T_ProcessPage::resumeSelectedProcess);
+    connect(exportButton, &ElaPushButton::clicked, this,
+            &T_ProcessPage::exportProcessList);
     connect(searchBox, &ElaLineEdit::textChanged, this,
             &T_ProcessPage::filterProcesses);
 
@@ -75,7 +85,8 @@ void T_ProcessPage::setupUI() {
     layout->addWidget(searchBox);
 
     // 设置表头
-    tableModel->setHorizontalHeaderLabels({"Process Name", "Process ID"});
+    tableModel->setHorizontalHeaderLabels(
+        {"Process Name", "Process ID", "CPU Usage", "Memory Usage"});
     processTableView->setModel(tableModel);
     processTableView->horizontalHeader()->setSectionResizeMode(
         QHeaderView::Stretch);
@@ -86,14 +97,13 @@ void T_ProcessPage::setupUI() {
 
     layout->addWidget(processTableView);
 
-    // 刷新按钮
+    // 按钮
     layout->addWidget(refreshButton);
-
-    // 启动进程按钮
     layout->addWidget(startButton);
-
-    // 终止进程按钮
     layout->addWidget(killButton);
+    layout->addWidget(pauseButton);
+    layout->addWidget(resumeButton);
+    layout->addWidget(exportButton);
 
     // 刷新频率选择框
     refreshRateComboBox = new ElaComboBox(this);
@@ -115,15 +125,18 @@ void T_ProcessPage::refreshProcessList() {
 
 void T_ProcessPage::populateTable(const QStringList &processes) {
     tableModel->clear();
-    tableModel->setHorizontalHeaderLabels({"Process Name", "Process ID"});
+    tableModel->setHorizontalHeaderLabels(
+        {"Process Name", "Process ID", "CPU Usage", "Memory Usage"});
 
     for (const QString &processInfo : processes) {
         QStringList details =
             processInfo.split(" ");  // 假设进程信息是以空格分隔的
-        if (details.size() == 2) {
+        if (details.size() == 4) {
             QList<QStandardItem *> items;
             items.append(new QStandardItem(details[0]));  // 进程名
             items.append(new QStandardItem(details[1]));  // 进程ID
+            items.append(new QStandardItem(details[2]));  // CPU 使用率
+            items.append(new QStandardItem(details[3]));  // 内存使用率
             tableModel->appendRow(items);
         }
     }
@@ -162,6 +175,42 @@ void T_ProcessPage::killSelectedProcess() {
     refreshProcessList();  // 重新刷新进程列表
 }
 
+void T_ProcessPage::pauseSelectedProcess() {
+    QModelIndexList selectedRows =
+        processTableView->selectionModel()->selectedRows();
+    if (selectedRows.isEmpty()) {
+        QMessageBox::warning(this, "No selection",
+                             "Please select one or more processes to pause.");
+        return;
+    }
+
+    for (const QModelIndex &index : selectedRows) {
+        QString processID = tableModel->item(index.row(), 1)->text();
+        int pid = processID.toInt();
+        processManager.pauseProcess(pid);
+    }
+
+    refreshProcessList();  // 重新刷新进程列表
+}
+
+void T_ProcessPage::resumeSelectedProcess() {
+    QModelIndexList selectedRows =
+        processTableView->selectionModel()->selectedRows();
+    if (selectedRows.isEmpty()) {
+        QMessageBox::warning(this, "No selection",
+                             "Please select one or more processes to resume.");
+        return;
+    }
+
+    for (const QModelIndex &index : selectedRows) {
+        QString processID = tableModel->item(index.row(), 1)->text();
+        int pid = processID.toInt();
+        processManager.resumeProcess(pid);
+    }
+
+    refreshProcessList();  // 重新刷新进程列表
+}
+
 void T_ProcessPage::filterProcesses(const QString &text) {
     for (int i = 0; i < tableModel->rowCount(); ++i) {
         bool match = tableModel->item(i, 0)->text().contains(
@@ -194,4 +243,33 @@ void T_ProcessPage::setProcessPriority(int priority) {
         QMessageBox::warning(this, "Failure",
                              "Failed to change process priority.");
     }
+}
+
+void T_ProcessPage::exportProcessList() {
+    QString fileName = QFileDialog::getSaveFileName(this, "Export Process List",
+                                                    "", "CSV Files (*.csv)");
+    if (fileName.isEmpty()) {
+        return;
+    }
+
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::warning(this, "Export Failed",
+                             "Unable to open file for writing.");
+        return;
+    }
+
+    QTextStream out(&file);
+    out << "Process Name,Process ID,CPU Usage,Memory Usage\n";
+    for (int row = 0; row < tableModel->rowCount(); ++row) {
+        QStringList rowData;
+        for (int col = 0; col < tableModel->columnCount(); ++col) {
+            rowData << tableModel->item(row, col)->text();
+        }
+        out << rowData.join(",") << "\n";
+    }
+
+    file.close();
+    QMessageBox::information(this, "Export Successful",
+                             "Process list exported successfully.");
 }

@@ -18,36 +18,43 @@
 #include "ElaPushButton.h"
 #include "T_BasePage.h"
 
+namespace {
+constexpr int kMaxLogLines = 1000;
+constexpr int kTruncateIntervalMs = 60000;
+}  // namespace
+
 T_LogPanelPage::T_LogPanelPage(QWidget *parent)
     : T_BasePage(parent),
       logTextEdit(new ElaPlainTextEdit(this)),
       filterComboBox(new ElaComboBox(this)),
       clearButton(new ElaPushButton("清空日志", this)),
       saveButton(new ElaPushButton("保存日志", this)),
+      saveHtmlButton(new ElaPushButton("导出为HTML", this)),
       searchLineEdit(new ElaLineEdit(this)),
       searchButton(new ElaPushButton("搜索", this)),
       autoScrollCheckBox(new ElaCheckBox("自动滚动", this)),
+      pauseLoggingCheckBox(new ElaCheckBox("暂停日志记录", this)),
       currentFilterLevel(Info),
       autoScrollEnabled(true),
+      loggingPaused(false),
       truncateTimer(new QTimer(this)) {
-    // 设置日志面板为只读
     logTextEdit->setReadOnly(true);
 
-    // 设置过滤下拉框
     filterComboBox->addItem("全部", QVariant::fromValue(-1));
     filterComboBox->addItem("信息", QVariant::fromValue(Info));
     filterComboBox->addItem("警告", QVariant::fromValue(Warning));
     filterComboBox->addItem("错误", QVariant::fromValue(Error));
 
-    // 布局设置
-    QVBoxLayout *mainLayout = new QVBoxLayout;
-    QHBoxLayout *controlLayout = new QHBoxLayout;
+    auto *mainLayout = new QVBoxLayout;
+    auto *controlLayout = new QHBoxLayout;
     controlLayout->addWidget(filterComboBox);
     controlLayout->addWidget(searchLineEdit);
     controlLayout->addWidget(searchButton);
     controlLayout->addWidget(autoScrollCheckBox);
+    controlLayout->addWidget(pauseLoggingCheckBox);  // 新增暂停复选框
     controlLayout->addWidget(clearButton);
     controlLayout->addWidget(saveButton);
+    controlLayout->addWidget(saveHtmlButton);  // 新增HTML按钮
 
     mainLayout->addLayout(controlLayout);
     mainLayout->addWidget(logTextEdit);
@@ -59,41 +66,42 @@ T_LogPanelPage::T_LogPanelPage(QWidget *parent)
     centerLayout->setContentsMargins(0, 0, 0, 0);
     addCentralWidget(centralWidget, true, true, 0);
 
-    // 连接信号槽
     connect(filterComboBox, SIGNAL(currentIndexChanged(int)), this,
             SLOT(filterLogs()));
     connect(clearButton, &ElaPushButton::clicked, this,
             &T_LogPanelPage::clearLogs);
     connect(saveButton, &ElaPushButton::clicked, this,
             &T_LogPanelPage::saveLogs);
+    connect(saveHtmlButton, &ElaPushButton::clicked, this,
+            &T_LogPanelPage::saveLogsAsHtml);
     connect(searchButton, &ElaPushButton::clicked, this,
             &T_LogPanelPage::searchLogs);
     connect(autoScrollCheckBox, &ElaCheckBox::toggled, this,
             &T_LogPanelPage::autoScrollToggled);
+    connect(pauseLoggingCheckBox, &ElaCheckBox::toggled, this,
+            &T_LogPanelPage::pauseLoggingToggled);
     connect(truncateTimer, &QTimer::timeout, this,
             &T_LogPanelPage::truncateLogs);
 
-    // 初始化设置
     autoScrollCheckBox->setChecked(true);
-    truncateTimer->start(60000);  // 每分钟检查一次日志是否需要截断
+    truncateTimer->start(kTruncateIntervalMs);
 
-    // 设置 Qt 的全局消息处理函数
     qInstallMessageHandler(T_LogPanelPage::messageHandler);
 }
 
-T_LogPanelPage::~T_LogPanelPage() {
-    // 析构函数
-}
+T_LogPanelPage::~T_LogPanelPage() = default;
 
 void T_LogPanelPage::addLogMessage(const QString &message, LogLevel level) {
-    QMutexLocker locker(&logMutex);  // 确保线程安全
+    if (loggingPaused) {
+        return;
+    }
 
-    // 获取当前时间并格式化
+    QMutexLocker locker(&logMutex);
+
     QString timeStamp =
         QDateTime::currentDateTime().toString("[yyyy-MM-dd HH:mm:ss]");
     QString formattedMessage = timeStamp + " " + message;
 
-    // 根据日志级别设定颜色
     QString colorCode;
     switch (level) {
         case Info:
@@ -107,33 +115,29 @@ void T_LogPanelPage::addLogMessage(const QString &message, LogLevel level) {
             break;
     }
 
-    // 添加带颜色的日志信息
     QString coloredMessage = QString("<font color=\"%1\">%2</font>")
                                  .arg(colorCode, formattedMessage);
     logTextEdit->appendHtml(coloredMessage);
 
-    // 自动滚动到最新日志
     if (autoScrollEnabled) {
         logTextEdit->moveCursor(QTextCursor::End);
     }
 }
 
 void T_LogPanelPage::filterLogs() {
-    QMutexLocker locker(&logMutex);  // 确保线程安全
+    QMutexLocker locker(&logMutex);
     currentFilterLevel =
         static_cast<LogLevel>(filterComboBox->currentData().toInt());
 
-    // 显示或隐藏日志
     logTextEdit->moveCursor(QTextCursor::Start);
     QStringList lines = logTextEdit->toPlainText().split("\n");
 
     logTextEdit->clear();
-
     for (const QString &line : lines) {
         if ((line.contains("[信息]") && currentFilterLevel <= Info) ||
             (line.contains("[警告]") && currentFilterLevel <= Warning) ||
             (line.contains("[错误]") && currentFilterLevel <= Error) ||
-            currentFilterLevel == -1) {
+            currentFilterLevel == static_cast<LogLevel>(-1)) {
             logTextEdit->appendPlainText(line);
         }
     }
@@ -144,8 +148,9 @@ void T_LogPanelPage::clearLogs() { logTextEdit->clear(); }
 void T_LogPanelPage::saveLogs() {
     QString fileName = QFileDialog::getSaveFileName(
         this, "保存日志", "", "文本文件 (*.txt);;所有文件 (*)");
-    if (fileName.isEmpty())
+    if (fileName.isEmpty()) {
         return;
+    }
 
     QFile file(fileName);
     if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -157,6 +162,27 @@ void T_LogPanelPage::saveLogs() {
     }
 }
 
+void T_LogPanelPage::saveLogsAsHtml() {
+    QString fileName = QFileDialog::getSaveFileName(
+        this, "导出为HTML", "", "HTML文件 (*.html);;所有文件 (*)");
+    if (fileName.isEmpty()) {
+        return;
+    }
+
+    QFile file(fileName);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream out(&file);
+        QString html;
+        QTextStream stream(&html);
+        stream << "<html><body><pre>" << logTextEdit->toPlainText()
+               << "</pre></body></html>";
+        out << html;
+        file.close();
+    } else {
+        QMessageBox::warning(this, "导出为HTML", "无法保存HTML文件。");
+    }
+}
+
 void T_LogPanelPage::searchLogs() {
     QString searchText = searchLineEdit->text();
     if (searchText.isEmpty()) {
@@ -164,28 +190,23 @@ void T_LogPanelPage::searchLogs() {
         return;
     }
 
-    QTextCursor cursor = logTextEdit->textCursor();
-    cursor.movePosition(QTextCursor::Start);
-    logTextEdit->setTextCursor(cursor);
-
-    // 查找并高亮显示搜索内容
-    if (!logTextEdit->find(searchText)) {
-        QMessageBox::information(this, "搜索", "未找到匹配内容");
-    }
+    logTextEdit->moveCursor(QTextCursor::Start);
 }
 
 void T_LogPanelPage::autoScrollToggled(bool checked) {
     autoScrollEnabled = checked;
 }
 
-void T_LogPanelPage::truncateLogs() {
-    QMutexLocker locker(&logMutex);  // 确保线程安全
+void T_LogPanelPage::pauseLoggingToggled(bool checked) {
+    loggingPaused = checked;
+}
 
-    // 如果日志行数超过最大值，则截断
+void T_LogPanelPage::truncateLogs() {
+    QMutexLocker locker(&logMutex);
+
     QStringList lines = logTextEdit->toPlainText().split("\n");
-    if (lines.size() > MaxLogLines) {
-        lines =
-            lines.mid(lines.size() - MaxLogLines);  // 保留最后的MaxLogLines行
+    if (lines.size() > kMaxLogLines) {
+        lines = lines.mid(lines.size() - kMaxLogLines);
         logTextEdit->clear();
         logTextEdit->appendPlainText(lines.join("\n"));
     }
@@ -197,7 +218,6 @@ void T_LogPanelPage::messageHandler(QtMsgType type,
     QString level;
     LogLevel logLevel;
 
-    // 根据消息类型设置日志级别
     switch (type) {
         case QtDebugMsg:
             level = "[信息]";
@@ -218,10 +238,9 @@ void T_LogPanelPage::messageHandler(QtMsgType type,
             break;
     }
 
-    // 获取当前活跃的主窗口实例并添加日志
-    auto instance =
+    auto *instance =
         qobject_cast<T_LogPanelPage *>(QApplication::activeWindow());
-    if (instance) {
+    if (instance != nullptr) {
         instance->addLogMessage(level + " " + msg, logLevel);
     }
 }

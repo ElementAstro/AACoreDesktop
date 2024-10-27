@@ -14,13 +14,13 @@ ElaTabWidget::ElaTabWidget(QWidget* parent)
     d->q_ptr = this;
     _pIsTabTransparent = false;
     setObjectName("ElaTabWidget");
-    setStyleSheet("#ElaTabWidget{background-color:transparent;}");
     setAcceptDrops(true);
     ElaTabBar* tabBar = new ElaTabBar(this);
     setTabBar(tabBar);
     connect(tabBar, &ElaTabBar::tabBarPress, d, &ElaTabWidgetPrivate::onTabBarPress);
     connect(tabBar, &ElaTabBar::tabDragCreate, d, &ElaTabWidgetPrivate::onTabDragCreate);
     connect(tabBar, &ElaTabBar::tabDragDrop, d, &ElaTabWidgetPrivate::onTabDragDrop);
+    connect(tabBar, &ElaTabBar::tabCloseRequested, d, &ElaTabWidgetPrivate::onTabCloseRequested);
 }
 
 ElaTabWidget::~ElaTabWidget()

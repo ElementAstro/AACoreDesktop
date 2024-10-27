@@ -13,6 +13,9 @@
 class ElaLineEdit;
 class ElaListView;
 class ElaComboBox;
+class ElaPushButton;
+class ElaText;
+class QProgressBar;
 
 class T_SoftwarePage : public T_BasePage {
     Q_OBJECT
@@ -26,6 +29,7 @@ private slots:
     void showAppDetails(const QModelIndex &index);
     void onInstallButtonClicked();
     void onUninstallButtonClicked();
+    void onExportButtonClicked();
 
 private:
     ElaLineEdit *searchBox;
@@ -34,8 +38,9 @@ private:
     ElaListView *appListView;
     QStandardItemModel *appListModel;
     SoftwareManager *softwareManager;  // 软件管理器对象
-    QList<SoftwareManager::SoftwareInfo>
-        softwareData;  // 存储所有已安装的软件信息
+    QList<SoftwareManager::SoftwareInfo> softwareData;  // 存储所有已安装的软件信息
+    QProgressBar *progressBar;  // 进度条
+    ElaText *statusLabel;  // 状态标签
 
     void loadInstalledSoftware();
     static QList<SoftwareManager::SoftwareInfo> filterSoftware(

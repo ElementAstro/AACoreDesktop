@@ -7,7 +7,6 @@
 
 #include "T_BasePage.h"
 
-
 class ElaComboBox;
 class ElaLineEdit;
 class ElaCheckBox;
@@ -26,7 +25,7 @@ class T_SerialConfig : public T_BasePage {
 
 public:
     explicit T_SerialConfig(QWidget *parent = nullptr);
-    ~T_SerialConfig();
+    ~T_SerialConfig() override;
 
 private slots:
     void onOkClicked();
@@ -37,6 +36,9 @@ private slots:
     void loadConfig();
 
 private:
+    void setupUi();
+    void setupConnections();
+
     ElaComboBox *comComboBox;
     QList<ElaLineEdit *> dcLineEditList;
     QList<ElaCheckBox *> dcCheckBoxList;

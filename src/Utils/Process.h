@@ -27,7 +27,20 @@ public:
     // 终止进程
     bool killProcess(int processID);
 
+    // 设置进程优先级
     bool setProcessPriority(int processID, int priority);
+
+    // 暂停进程
+    bool pauseProcess(int processID);
+
+    // 恢复进程
+    bool resumeProcess(int processID);
+
+    // 获取进程 CPU 使用率
+    double getProcessCpuUsage(int processID);
+
+    // 获取进程内存使用率
+    double getProcessMemoryUsage(int processID);
 
 private:
 #ifdef _WIN32
