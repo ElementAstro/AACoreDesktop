@@ -1,8 +1,15 @@
+// T_SimpleSequencerPage.cpp
 #include "T_SimpleSequencer.h"
 
 #include <QBarSeries>
+#include <QBarSet>
+#include <QFileDialog>
 #include <QHeaderView>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QMessageBox>
+
 
 #include "ElaComboBox.h"
 #include "ElaLineEdit.h"
@@ -23,7 +30,6 @@ const int ModelColumnCount = 8;
 T_SimpleSequencerPage::T_SimpleSequencerPage(QWidget *parent)
     : T_BasePage(parent), mainLayout(nullptr), model(nullptr) {
     setupUI();
-    applyStyles();
 }
 
 void T_SimpleSequencerPage::setupUI() {
@@ -48,37 +54,40 @@ void T_SimpleSequencerPage::createTopSection() {
     topWidget = new QWidget(this);
     auto topLayout = new QHBoxLayout(topWidget);
 
-    // Left side switches
-    auto startOptionsWidget = new QWidget(topWidget);
-    auto startOptionsLayout = new QVBoxLayout(startOptionsWidget);
-    auto targetSetStartText = new ElaText("Start Options", startOptionsWidget);
-    targetSetStartText->setTextPixelSize(TextPixelSize);
+    // Start Options
+    auto *startOptionsWidget = new QWidget(topWidget);
+    auto *startOptionsLayout = new QVBoxLayout(startOptionsWidget);
+    auto *startText = new ElaText("Start Options", startOptionsWidget);
+    startText->setTextPixelSize(TextPixelSize);
 
-    auto switchesWidget = new QWidget(startOptionsWidget);
-    auto switchesLayout = new QHBoxLayout(switchesWidget);
+    auto *startSwitchesWidget = new QWidget(startOptionsWidget);
+    auto *startSwitchesLayout = new QHBoxLayout(startSwitchesWidget);
 
-    coolCameraSwitch = new ElaToggleSwitch(switchesWidget);
-    unparkMountSwitch = new ElaToggleSwitch(switchesWidget);
-    meridianFlipSwitch = new ElaToggleSwitch(switchesWidget);
+    coolCameraSwitch = new ElaToggleSwitch(startSwitchesWidget);
+    unparkMountSwitch = new ElaToggleSwitch(startSwitchesWidget);
+    meridianFlipSwitch = new ElaToggleSwitch(startSwitchesWidget);
 
-    switchesLayout->addWidget(new ElaText("Cool Camera", switchesWidget));
-    switchesLayout->addWidget(coolCameraSwitch);
-    switchesLayout->addWidget(new ElaText("Unpark Mount", switchesWidget));
-    switchesLayout->addWidget(unparkMountSwitch);
-    switchesLayout->addWidget(new ElaText("Meridian Flip", switchesWidget));
-    switchesLayout->addWidget(meridianFlipSwitch);
+    startSwitchesLayout->addWidget(
+        new ElaText("Cool Camera", startSwitchesWidget));
+    startSwitchesLayout->addWidget(coolCameraSwitch);
+    startSwitchesLayout->addWidget(
+        new ElaText("Unpark Mount", startSwitchesWidget));
+    startSwitchesLayout->addWidget(unparkMountSwitch);
+    startSwitchesLayout->addWidget(
+        new ElaText("Meridian Flip", startSwitchesWidget));
+    startSwitchesLayout->addWidget(meridianFlipSwitch);
 
-    startOptionsLayout->addWidget(targetSetStartText);
-    startOptionsLayout->addWidget(switchesWidget);
+    startOptionsLayout->addWidget(startText);
+    startOptionsLayout->addWidget(startSwitchesWidget);
 
-    // Right side switches
-    auto endOptionsWidget = new QWidget(topWidget);
-    auto endOptionsLayout = new QVBoxLayout(endOptionsWidget);
-    auto targetSetEndText = new ElaText("End Options", endOptionsWidget);
-    targetSetEndText->setTextPixelSize(TextPixelSize);
+    // End Options
+    auto *endOptionsWidget = new QWidget(topWidget);
+    auto *endOptionsLayout = new QVBoxLayout(endOptionsWidget);
+    auto *endText = new ElaText("End Options", endOptionsWidget);
+    endText->setTextPixelSize(TextPixelSize);
 
-    auto endSwitchesWidget = new QWidget(endOptionsWidget);
-    auto endSwitchesLayout = new QHBoxLayout(endSwitchesWidget);
+    auto *endSwitchesWidget = new QWidget(endOptionsWidget);
+    auto *endSwitchesLayout = new QHBoxLayout(endSwitchesWidget);
 
     warmCameraSwitch = new ElaToggleSwitch(endSwitchesWidget);
     parkMountSwitch = new ElaToggleSwitch(endSwitchesWidget);
@@ -88,7 +97,7 @@ void T_SimpleSequencerPage::createTopSection() {
     endSwitchesLayout->addWidget(new ElaText("Park Mount", endSwitchesWidget));
     endSwitchesLayout->addWidget(parkMountSwitch);
 
-    endOptionsLayout->addWidget(targetSetEndText);
+    endOptionsLayout->addWidget(endText);
     endOptionsLayout->addWidget(endSwitchesWidget);
 
     topLayout->addWidget(startOptionsWidget);
@@ -102,8 +111,14 @@ void T_SimpleSequencerPage::createMiddleSection() {
 
     delayStartSpinBox = new ElaSpinBox(middleWidget);
     delayStartSpinBox->setSuffix(" s");
+    delayStartSpinBox->setRange(0, 3600);
+    delayStartSpinBox->setValue(10);
+
     sequenceModeCombo = new ElaComboBox(middleWidget);
     sequenceModeCombo->addItem("One after another");
+    sequenceModeCombo->addItem("Simultaneously");
+    connect(sequenceModeCombo, &ElaComboBox::currentTextChanged, this,
+            &T_SimpleSequencerPage::onSequenceModeChanged);
 
     middleLayout->addWidget(new ElaText("Delay Start:", middleWidget), 0, 0);
     middleLayout->addWidget(delayStartSpinBox, 0, 1);
@@ -132,23 +147,29 @@ void T_SimpleSequencerPage::createBottomSection() {
     auto bottomLayout = new QVBoxLayout(bottomWidget);
 
     targetTable = new ElaTableView(bottomWidget);
-    model = new QStandardItemModel(1, ModelColumnCount, this);
+    model = new QStandardItemModel(0, ModelColumnCount, this);
     model->setHorizontalHeaderLabels({"Enabled", "Progress", "Total #", "Time",
                                       "Type", "Filter", "Binning", "Dither"});
 
     targetTable->setModel(model);
+    targetTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     bottomLayout->addWidget(targetTable);
     createChart();
+    bottomLayout->addWidget(chartView);
+
+    connect(model, &QStandardItemModel::itemChanged, this,
+            &T_SimpleSequencerPage::updateEstimatedTimes);
 }
 
 void T_SimpleSequencerPage::createChart() {
-    auto series = new QBarSeries();
-    auto chart = new QChart();
-
+    auto *series = new QBarSeries();
+    auto *chart = new QChart();
     chart->addSeries(series);
-    chart->legend()->hide();
-    chartView = new QChartView(chart);
+    chart->setTitle("Sequence Progress");
+    chart->setAnimationOptions(QChart::SeriesAnimations);
+    chartView = new QChartView(chart, this);
     chartView->setFixedHeight(ChartHeight);
+    chartView->setRenderHint(QPainter::Antialiasing);
 }
 
 void T_SimpleSequencerPage::createControlButtons() {
@@ -174,25 +195,24 @@ void T_SimpleSequencerPage::createControlButtons() {
 
     mainLayout->addWidget(buttonWidget);
 
-    // 连接按钮点击事件到槽函数
-    connect(backButton, &QPushButton::clicked, this,
+    // Connect buttons
+    connect(backButton, &ElaPushButton::clicked, this,
             &T_SimpleSequencerPage::onBackButtonClicked);
-    connect(addButton, &QPushButton::clicked, this,
+    connect(addButton, &ElaPushButton::clicked, this,
             &T_SimpleSequencerPage::onAddButtonClicked);
-    connect(deleteButton, &QPushButton::clicked, this,
+    connect(deleteButton, &ElaPushButton::clicked, this,
             &T_SimpleSequencerPage::onDeleteButtonClicked);
-    connect(resetButton, &QPushButton::clicked, this,
+    connect(resetButton, &ElaPushButton::clicked, this,
             &T_SimpleSequencerPage::onResetButtonClicked);
-    connect(moveUpButton, &QPushButton::clicked, this,
+    connect(moveUpButton, &ElaPushButton::clicked, this,
             &T_SimpleSequencerPage::onMoveUpButtonClicked);
-    connect(moveDownButton, &QPushButton::clicked, this,
+    connect(moveDownButton, &ElaPushButton::clicked, this,
             &T_SimpleSequencerPage::onMoveDownButtonClicked);
-    connect(startButton, &QPushButton::clicked, this,
+    connect(startButton, &ElaPushButton::clicked, this,
             &T_SimpleSequencerPage::onStartButtonClicked);
 }
 
 void T_SimpleSequencerPage::applyStyles() {
-    // 设置样式
     setStyleSheet(R"(
         QWidget {
             font-size: 13px;
@@ -218,7 +238,6 @@ void T_SimpleSequencerPage::applyStyles() {
     )");
 }
 
-// 槽函数实现
 void T_SimpleSequencerPage::onBackButtonClicked() {
     QMessageBox::information(this, "Back", "Returning to the previous page");
 }
@@ -236,9 +255,11 @@ void T_SimpleSequencerPage::onAddButtonClicked() {
     model->setItem(rowCount, 2, new QStandardItem("1"));
     model->setItem(rowCount, 3, new QStandardItem("1 s"));
     model->setItem(rowCount, 4, new QStandardItem("LIGHT"));
-    model->setItem(rowCount, 5, new QStandardItem(""));
+    model->setItem(rowCount, 5, new QStandardItem("None"));
     model->setItem(rowCount, 6, new QStandardItem("1x1"));
     model->setItem(rowCount, 7, new QStandardItem("OFF"));
+
+    populateChart();
 }
 
 void T_SimpleSequencerPage::onDeleteButtonClicked() {
@@ -248,11 +269,13 @@ void T_SimpleSequencerPage::onDeleteButtonClicked() {
     for (const auto &index : selectedRows) {
         model->removeRow(index.row());
     }
+
+    populateChart();
 }
 
 void T_SimpleSequencerPage::onResetButtonClicked() {
     model->removeRows(0, model->rowCount());
-    onAddButtonClicked();  // 添加一行默认数据
+    onAddButtonClicked();  // Add default row
 }
 
 void T_SimpleSequencerPage::onMoveUpButtonClicked() {
@@ -267,6 +290,8 @@ void T_SimpleSequencerPage::onMoveUpButtonClicked() {
     model->insertRow(currentRow - 1, model->takeRow(currentRow));
     selectionModel->select(model->index(currentRow - 1, 0),
                            QItemSelectionModel::Select);
+
+    populateChart();
 }
 
 void T_SimpleSequencerPage::onMoveDownButtonClicked() {
@@ -282,8 +307,100 @@ void T_SimpleSequencerPage::onMoveDownButtonClicked() {
     model->insertRow(currentRow + 1, model->takeRow(currentRow));
     selectionModel->select(model->index(currentRow + 1, 0),
                            QItemSelectionModel::Select);
+
+    populateChart();
 }
 
 void T_SimpleSequencerPage::onStartButtonClicked() {
     QMessageBox::information(this, "Start", "Sequence started");
+}
+
+void T_SimpleSequencerPage::onSequenceModeChanged(const QString &mode) {
+    Q_UNUSED(mode);
+    updateEstimatedTimes();
+}
+
+void T_SimpleSequencerPage::updateEstimatedTimes() {
+    // Placeholder for actual time calculations
+    estimatedDownloadTimeEdit->setText("5 min");
+    estimatedFinishTimeEdit->setDateTime(
+        QDateTime::currentDateTime().addSecs(300));
+    estFinishTimeThisTargetEdit->setDateTime(
+        QDateTime::currentDateTime().addSecs(300));
+}
+
+void T_SimpleSequencerPage::loadSequenceFromFile(const QString &filePath) {
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        QMessageBox::warning(this, "Load Error", "Failed to open file.");
+        return;
+    }
+
+    QByteArray data = file.readAll();
+    file.close();
+    QJsonDocument doc = QJsonDocument::fromJson(data);
+    QJsonObject obj = doc.object();
+
+    QJsonArray sequenceArray = obj["sequence"].toArray();
+    for (const QJsonValue &value : sequenceArray) {
+        QJsonObject seqObj = value.toObject();
+        onAddButtonClicked();
+        int row = model->rowCount() - 1;
+        model->setData(model->index(row, 1), seqObj["progress"].toString());
+        model->setData(model->index(row, 2), seqObj["total"].toString());
+        model->setData(model->index(row, 3), seqObj["time"].toString());
+        model->setData(model->index(row, 4), seqObj["type"].toString());
+        model->setData(model->index(row, 5), seqObj["filter"].toString());
+        model->setData(model->index(row, 6), seqObj["binning"].toString());
+        model->setData(model->index(row, 7), seqObj["dither"].toString());
+    }
+
+    populateChart();
+}
+
+void T_SimpleSequencerPage::saveSequenceToFile(const QString &filePath) {
+    QJsonObject obj;
+    QJsonArray sequenceArray;
+    for (int row = 0; row < model->rowCount(); ++row) {
+        QJsonObject seqObj;
+        seqObj["progress"] = model->item(row, 1)->text();
+        seqObj["total"] = model->item(row, 2)->text();
+        seqObj["time"] = model->item(row, 3)->text();
+        seqObj["type"] = model->item(row, 4)->text();
+        seqObj["filter"] = model->item(row, 5)->text();
+        seqObj["binning"] = model->item(row, 6)->text();
+        seqObj["dither"] = model->item(row, 7)->text();
+        sequenceArray.append(seqObj);
+    }
+    obj["sequence"] = sequenceArray;
+
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly)) {
+        QMessageBox::warning(this, "Save Error", "Failed to save file.");
+        return;
+    }
+
+    file.write(QJsonDocument(obj).toJson());
+    file.close();
+    QMessageBox::information(this, "Save", "Sequence saved successfully.");
+}
+
+void T_SimpleSequencerPage::populateChart() {
+    // Example chart population
+    auto chart = chartView->chart();
+    chart->removeAllSeries();
+
+    QBarSeries *series = new QBarSeries();
+    for (int row = 0; row < model->rowCount(); ++row) {
+        QString progress = model->item(row, 1)->text().split(" / ").first();
+        bool ok;
+        double value = progress.toDouble(&ok);
+        if (ok) {
+            QBarSet *set = new QBarSet(model->item(row, 4)->text());
+            set->append(value);
+            series->append(set);
+        }
+    }
+    chart->addSeries(series);
+    chart->createDefaultAxes();
 }

@@ -4,26 +4,41 @@
 #include "ElaToggleSwitch.h"
 #include "T_BasePage.h"
 
+#include <QChartView>
+#include <QGroupBox>
+#include <QLabel>
+#include <QTimer>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+
 class QVBoxLayout;
 class QChartView;
 class QGridLayout;
 class QGroupBox;
-class ElaToggleSwitch;
+class ElaComboBox;
 class ElaIconButton;
+class ElaPushButton;
+class ElaSlider;
+class ElaSpinBox;
+class ElaTabWidget;
+class ElaText;
+class C_InfoCard;
 
 class T_PHD2SetupDialog;
+
 class T_GuiderPage : public T_BasePage {
     Q_OBJECT
 public:
     explicit T_GuiderPage(QWidget *parent = nullptr);
+    ~T_GuiderPage();
 
 protected:
-    QHBoxLayout *createTopLayout();
-    QWidget *createInfoTab();
-    QWidget *createControlTab();
-    QWidget *createSettingsTab();
-    QGroupBox *createInfoGroup(const QString &title);
-    QChartView *createGuideChart();
+    QHBoxLayout* createTopLayout();
+    QWidget* createInfoTab();
+    QWidget* createControlTab();
+    QWidget* createSettingsTab();
+    QGroupBox* createInfoGroup(const QString &title);
+    QChartView* createGuideChart();
     void onRAColorButtonClicked();
     void onDecColorButtonClicked();
 

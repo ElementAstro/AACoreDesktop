@@ -32,6 +32,7 @@ T_SerialDebugPage::T_SerialDebugPage(QWidget *parent)
       refreshSerialButton(nullptr),
       autoReconnectCheckBox(nullptr),
       newlineCheckBox(nullptr),
+      timestampCheckBox(nullptr),
       serialPortComboBox(nullptr),
       baudRateComboBox(nullptr),
       dataBitsComboBox(nullptr),
@@ -41,7 +42,8 @@ T_SerialDebugPage::T_SerialDebugPage(QWidget *parent)
       sendLineEdit(nullptr),
       receiveTextEdit(nullptr),
       rxLabel(nullptr),
-      txLabel(nullptr) {
+      txLabel(nullptr),
+      statusLabel(nullptr) {
     setupUI();          // 创建界面
     loadSendHistory();  // 加载发送历史
 
@@ -86,9 +88,22 @@ void T_SerialDebugPage::setupUI() {
     dataBitsComboBox->addItem("8", QSerialPort::Data8);
     settingsLayout->addWidget(dataBitsComboBox);
 
+    stopBitsComboBox = new ElaComboBox();
+    stopBitsComboBox->addItem("1", QSerialPort::OneStop);
+    stopBitsComboBox->addItem("2", QSerialPort::TwoStop);
+    settingsLayout->addWidget(stopBitsComboBox);
+
     parityComboBox = new ElaComboBox();
     parityComboBox->addItem("None", QSerialPort::NoParity);
+    parityComboBox->addItem("Even", QSerialPort::EvenParity);
+    parityComboBox->addItem("Odd", QSerialPort::OddParity);
     settingsLayout->addWidget(parityComboBox);
+
+    flowControlComboBox = new ElaComboBox();
+    flowControlComboBox->addItem("None", QSerialPort::NoFlowControl);
+    flowControlComboBox->addItem("RTS/CTS", QSerialPort::HardwareControl);
+    flowControlComboBox->addItem("XON/XOFF", QSerialPort::SoftwareControl);
+    settingsLayout->addWidget(flowControlComboBox);
 
     mainLayout->addWidget(settingsGroup);
 
@@ -108,15 +123,17 @@ void T_SerialDebugPage::setupUI() {
     sendLineEdit = new ElaLineEdit();
     sendButton = new ElaPushButton("发送");
     newlineCheckBox = new ElaCheckBox("换行发送");
+    timestampCheckBox = new ElaCheckBox("添加时间戳");
     sendLayout->addWidget(sendLineEdit);
     sendLayout->addWidget(sendButton);
     sendLayout->addWidget(newlineCheckBox);
+    sendLayout->addWidget(timestampCheckBox);
     mainLayout->addLayout(sendLayout);
 
     connect(sendButton, &ElaPushButton::clicked, this,
             &T_SerialDebugPage::on_sendButton_clicked);
 
-    // 时间戳选择和重连选项
+    // 自动重连选项
     autoReconnectCheckBox = new ElaCheckBox("自动重连");
     mainLayout->addWidget(autoReconnectCheckBox);
 
@@ -124,8 +141,10 @@ void T_SerialDebugPage::setupUI() {
     auto *statusLayout = new QHBoxLayout();
     rxLabel = new ElaText("RX: 0");
     txLabel = new ElaText("TX: 0");
+    statusLabel = new ElaText("状态: 未连接");
     statusLayout->addWidget(rxLabel);
     statusLayout->addWidget(txLabel);
+    statusLayout->addWidget(statusLabel);
     mainLayout->addLayout(statusLayout);
 
     // 清屏和保存日志按钮
@@ -163,12 +182,22 @@ void T_SerialDebugPage::on_openSerialButton_clicked() {
     if (serial->isOpen()) {
         serial->close();
         openSerialButton->setText("打开串口");
+        statusLabel->setText("状态: 未连接");
     } else {
         serial->setPortName(serialPortComboBox->currentText());
         serial->setBaudRate(static_cast<QSerialPort::BaudRate>(
             baudRateComboBox->currentData().toInt()));
+        serial->setDataBits(static_cast<QSerialPort::DataBits>(
+            dataBitsComboBox->currentData().toInt()));
+        serial->setStopBits(static_cast<QSerialPort::StopBits>(
+            stopBitsComboBox->currentData().toInt()));
+        serial->setParity(static_cast<QSerialPort::Parity>(
+            parityComboBox->currentData().toInt()));
+        serial->setFlowControl(static_cast<QSerialPort::FlowControl>(
+            flowControlComboBox->currentData().toInt()));
         if (serial->open(QIODevice::ReadWrite)) {
             openSerialButton->setText("关闭串口");
+            statusLabel->setText("状态: 已连接");
         } else {
             QMessageBox::critical(this, "错误", "无法打开串口");
         }
@@ -181,9 +210,16 @@ void T_SerialDebugPage::on_sendButton_clicked() {
         if (newlineCheckBox->isChecked()) {
             data += "\r\n";
         }
+        if (timestampCheckBox->isChecked()) {
+            data = QDateTime::currentDateTime().toString(
+                       "[yyyy-MM-dd HH:mm:ss] ") +
+                   data;
+        }
         serial->write(data.toUtf8());
         sentBytes += data.size();
         txLabel->setText(QString("TX: %1").arg(sentBytes));
+        sendHistory.append(data);
+        currentHistoryIndex = sendHistory.size();
     }
 }
 
@@ -191,7 +227,12 @@ void T_SerialDebugPage::readSerialData() {
     QByteArray data = serial->readAll();
     receivedBytes += data.size();
     rxLabel->setText(QString("RX: %1").arg(receivedBytes));
-    receiveTextEdit->appendPlainText(QString::fromUtf8(data));
+    QString text = QString::fromUtf8(data);
+    if (timestampCheckBox->isChecked()) {
+        text = QDateTime::currentDateTime().toString("[yyyy-MM-dd HH:mm:ss] ") +
+               text;
+    }
+    receiveTextEdit->appendPlainText(text);
 }
 
 void T_SerialDebugPage::on_clearScreenButton_clicked() {

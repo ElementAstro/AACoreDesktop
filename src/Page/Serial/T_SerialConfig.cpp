@@ -15,7 +15,6 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
-#include "ElaCheckBox.h"
 #include "ElaComboBox.h"
 #include "ElaLineEdit.h"
 #include "ElaPushButton.h"
@@ -56,19 +55,16 @@ void T_SerialConfig::setupUi() {
     auto *dcGroupBox = new QGroupBox("DC Channels", this);
     auto *dcLayout = new QFormLayout();
     dcLabels = {"DC1", "DC2", "DC3", "DC4", "DC5", "DC6", "DC7"};
-    QStringList dcDescriptions = {"主镜供电",   "主相机供电", "赤道仪供电",
-                                  "滤镜轮供电", "电调供电",   "N/C",
-                                  "N/C"};
 
     for (int i = 0; i < dcLabels.size(); ++i) {
         auto *lineEdit = new ElaLineEdit(this);
-        auto *checkBox = new ElaCheckBox(dcDescriptions[i], this);
+        auto *editButton = new ElaPushButton("修改", this);
         dcLineEditList.append(lineEdit);
-        dcCheckBoxList.append(checkBox);
+        dcEditButtonList.append(editButton);
         auto *widget = new QWidget(this);
         auto *hLayout = new QHBoxLayout(widget);
         hLayout->addWidget(lineEdit);
-        hLayout->addWidget(checkBox);
+        hLayout->addWidget(editButton);
         hLayout->setContentsMargins(0, 0, 0, 0);
         auto *title = new ElaText(dcLabels[i], this);
         title->setTextPointSize(12);
@@ -81,18 +77,16 @@ void T_SerialConfig::setupUi() {
     auto *pwmGroupBox = new QGroupBox("PWM Channels", this);
     auto *pwmLayout = new QFormLayout();
     pwmLabels = {"PWM1", "PWM2", "PWM3"};
-    QStringList pwmDescriptions = {"主镜自动应加热", "平场板亮度",
-                                   "主机自动应加热"};
 
     for (int i = 0; i < pwmLabels.size(); ++i) {
         auto *lineEdit = new ElaLineEdit(this);
-        auto *checkBox = new ElaCheckBox(pwmDescriptions[i], this);
+        auto *editButton = new ElaPushButton("修改", this);
         pwmLineEditList.append(lineEdit);
-        pwmCheckBoxList.append(checkBox);
+        pwmEditButtonList.append(editButton);
         auto *widget = new QWidget(this);
         auto *hLayout = new QHBoxLayout(widget);
         hLayout->addWidget(lineEdit);
-        hLayout->addWidget(checkBox);
+        hLayout->addWidget(editButton);
         hLayout->setContentsMargins(0, 0, 0, 0);
         auto *title = new ElaText(pwmLabels[i], this);
         title->setTextPointSize(12);
@@ -103,11 +97,9 @@ void T_SerialConfig::setupUi() {
 
     // Control buttons and image
     auto *buttonLayout = new QHBoxLayout();
-    auto *traceCheckBox = new ElaCheckBox("Trace on", this);
-    auto *okButton = new ElaPushButton("OK", this);
-    auto *cancelButton = new ElaPushButton("Cancel", this);
+    okButton = new ElaPushButton("OK", this);
+    cancelButton = new ElaPushButton("Cancel", this);
 
-    buttonLayout->addWidget(traceCheckBox);
     buttonLayout->addStretch();
     buttonLayout->addWidget(okButton);
     buttonLayout->addWidget(cancelButton);
@@ -127,6 +119,30 @@ void T_SerialConfig::setupUi() {
 void T_SerialConfig::setupConnections() {
     connect(comComboBox, QOverload<int>::of(&ElaComboBox::currentIndexChanged),
             this, &T_SerialConfig::onComPortChanged);
+    connect(okButton, &ElaPushButton::clicked, this,
+            &T_SerialConfig::onOkClicked);
+    connect(cancelButton, &ElaPushButton::clicked, this,
+            &T_SerialConfig::onCancelClicked);
+
+    for (auto *editButton : dcEditButtonList) {
+        connect(editButton, &ElaPushButton::clicked, this,
+                &T_SerialConfig::onEditButtonClicked);
+    }
+
+    for (auto *lineEdit : dcLineEditList) {
+        connect(lineEdit, &ElaLineEdit::returnPressed, this,
+                &T_SerialConfig::onLineEditReturnPressed);
+    }
+
+    for (auto *editButton : pwmEditButtonList) {
+        connect(editButton, &ElaPushButton::clicked, this,
+                &T_SerialConfig::onEditButtonClicked);
+    }
+
+    for (auto *lineEdit : pwmLineEditList) {
+        connect(lineEdit, &ElaLineEdit::returnPressed, this,
+                &T_SerialConfig::onLineEditReturnPressed);
+    }
 
     auto *task = new GetSerialPortTask();
     auto *thread = new QThread();
@@ -141,7 +157,10 @@ void T_SerialConfig::setupConnections() {
     thread->start();
 }
 
-void T_SerialConfig::onOkClicked() { saveConfig(); }
+void T_SerialConfig::onOkClicked() {
+    saveConfig();
+    QMessageBox::information(this, "Current Configuration", "当前配置已保存");
+}
 
 void T_SerialConfig::onCancelClicked() {
     QMessageBox::information(this, "Cancel",
@@ -164,7 +183,6 @@ void T_SerialConfig::saveConfig() {
         QJsonObject dcItem;
         dcItem["label"] = dcLabels[i];
         dcItem["value"] = dcLineEditList[i]->text();
-        dcItem["enabled"] = dcCheckBoxList[i]->isChecked();
         dcArray.append(dcItem);
     }
     config["dcChannels"] = dcArray;
@@ -173,7 +191,6 @@ void T_SerialConfig::saveConfig() {
         QJsonObject pwmItem;
         pwmItem["label"] = pwmLabels[i];
         pwmItem["value"] = pwmLineEditList[i]->text();
-        pwmItem["enabled"] = pwmCheckBoxList[i]->isChecked();
         pwmArray.append(pwmItem);
     }
     config["pwmChannels"] = pwmArray;
@@ -210,7 +227,6 @@ void T_SerialConfig::loadConfig() {
         for (int i = 0; i < dcArray.size() && i < dcLineEditList.size(); ++i) {
             QJsonObject dcItem = dcArray[i].toObject();
             dcLineEditList[i]->setText(dcItem["value"].toString());
-            dcCheckBoxList[i]->setChecked(dcItem["enabled"].toBool());
         }
 
         // 加载 PWM 通道配置信息
@@ -219,10 +235,43 @@ void T_SerialConfig::loadConfig() {
              ++i) {
             QJsonObject pwmItem = pwmArray[i].toObject();
             pwmLineEditList[i]->setText(pwmItem["value"].toString());
-            pwmCheckBoxList[i]->setChecked(pwmItem["enabled"].toBool());
         }
     } else {
         QMessageBox::warning(this, "Load Error",
                              "Failed to load configuration.");
+    }
+}
+
+void T_SerialConfig::onEditButtonClicked() {
+    auto *button = qobject_cast<ElaPushButton *>(sender());
+    if (!button)
+        return;
+
+    int index = dcEditButtonList.indexOf(button);
+    if (index != -1) {
+        dcLineEditList[index]->setFocus();
+        return;
+    }
+
+    index = pwmEditButtonList.indexOf(button);
+    if (index != -1) {
+        pwmLineEditList[index]->setFocus();
+    }
+}
+
+void T_SerialConfig::onLineEditReturnPressed() {
+    auto *lineEdit = qobject_cast<ElaLineEdit *>(sender());
+    if (!lineEdit)
+        return;
+
+    int index = dcLineEditList.indexOf(lineEdit);
+    if (index != -1) {
+        dcEditButtonList[index]->setText(lineEdit->text());
+        return;
+    }
+
+    index = pwmLineEditList.indexOf(lineEdit);
+    if (index != -1) {
+        pwmEditButtonList[index]->setText(lineEdit->text());
     }
 }

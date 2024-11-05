@@ -9,7 +9,7 @@
 
 class ElaComboBox;
 class ElaLineEdit;
-class ElaCheckBox;
+class ElaPushButton;
 
 class GetSerialPortTask : public QObject {
     Q_OBJECT
@@ -34,6 +34,8 @@ private slots:
     void updateComPorts(const QStringList &ports);
     void saveConfig();
     void loadConfig();
+    void onEditButtonClicked();
+    void onLineEditReturnPressed();
 
 private:
     void setupUi();
@@ -41,11 +43,14 @@ private:
 
     ElaComboBox *comComboBox;
     QList<ElaLineEdit *> dcLineEditList;
-    QList<ElaCheckBox *> dcCheckBoxList;
+    QList<ElaPushButton *> dcEditButtonList;
     QList<ElaLineEdit *> pwmLineEditList;
-    QList<ElaCheckBox *> pwmCheckBoxList;
+    QList<ElaPushButton *> pwmEditButtonList;
     QStringList dcLabels;
     QStringList pwmLabels;
+
+    ElaPushButton *okButton;
+    ElaPushButton *cancelButton;
 };
 
 #endif  // T_SERIALCONFIG_H

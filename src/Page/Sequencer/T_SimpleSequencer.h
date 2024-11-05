@@ -1,6 +1,6 @@
 // T_SimpleSequencerPage.h
-#ifndef TARGETSETWIDGET_H
-#define TARGETSETWIDGET_H
+#ifndef T_SIMPLERESEQUENCERPAGE_H
+#define T_SIMPLERESEQUENCERPAGE_H
 
 #include <QChartView>
 #include <QDateTimeEdit>
@@ -18,6 +18,7 @@ class ElaComboBox;
 class ElaPushButton;
 class ElaToggleSwitch;
 class ElaSpinBox;
+class ElaText;
 
 class T_SimpleSequencerPage : public T_BasePage {
     Q_OBJECT
@@ -33,6 +34,8 @@ private slots:
     void onMoveUpButtonClicked();
     void onMoveDownButtonClicked();
     void onStartButtonClicked();
+    void onSequenceModeChanged(const QString &mode);
+    void updateEstimatedTimes();
 
 private:
     void setupUI();
@@ -42,6 +45,9 @@ private:
     void createChart();
     void createControlButtons();
     void applyStyles();
+    void loadSequenceFromFile(const QString &filePath);
+    void saveSequenceToFile(const QString &filePath);
+    void populateChart();
 
     QVBoxLayout *mainLayout;
     QWidget *topWidget;
@@ -74,4 +80,4 @@ private:
     ElaPushButton *startButton;
 };
 
-#endif  // TARGETSETWIDGET_H
+#endif  // T_SIMPLERESEQUENCERPAGE_H

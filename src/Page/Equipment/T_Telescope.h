@@ -4,11 +4,26 @@
 #include "ElaToggleSwitch.h"
 #include "T_BasePage.h"
 
+#include <QChartView>
+#include <QGroupBox>
+#include <QLabel>
+#include <QTimer>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+
 class QVBoxLayout;
 class QChartView;
 class QGridLayout;
-class QGroupBox;
 class ElaToggleSwitch;
+class ElaComboBox;
+class ElaIconButton;
+class ElaPushButton;
+class ElaSlider;
+class ElaSpinBox;
+class ElaTabWidget;
+class ElaText;
+class C_InfoCard;
+
 class T_TelescopePage : public T_BasePage {
     Q_OBJECT
 public:
@@ -28,7 +43,38 @@ protected:
                         double defaultValue);
     void addReversedToggle(QVBoxLayout *layout, const QString &label);
 
-    ElaToggleSwitch *_toggleSwitch{nullptr};
+private slots:
+    void onPowerButtonClicked();
+    void onRefreshButtonClicked();
+    void onSlewButtonClicked();
+    void onDirectionButtonClicked(const QString &direction);
+    void onParkButtonClicked();
+    void onSetParkPointClicked();
+    void onHomeButtonClicked();
+    void onDewHeaterToggled(bool checked);
+    void updateTrackingStatus();
+    void onTrackingRateChanged(int value);
+    void onSecondaryRateChanged(int value);
+    void onMainAxisReversed(bool checked);
+    void onSecondaryAxisReversed(bool checked);
+
+private:
+    ElaToggleSwitch *_dewHeaterSwitch{nullptr};
+    QLabel *_trackingStatusLabel{nullptr};
+    QTimer *_trackingTimer{nullptr};
+    ElaComboBox *_trackingRateCombo{nullptr};
+    ElaSlider *_mainRateSlider{nullptr};
+    ElaSpinBox *_mainRateSpinBox{nullptr};
+    ElaSlider *_secondaryRateSlider{nullptr};
+    ElaSpinBox *_secondaryRateSpinBox{nullptr};
+    ElaToggleSwitch *_mainAxisReversedSwitch{nullptr};
+    ElaToggleSwitch *_secondaryAxisReversedSwitch{nullptr};
+    ElaIconButton *_powerButton{nullptr};
+    ElaIconButton *_refreshButton{nullptr};
+    ElaPushButton *_slewButton{nullptr};
+    ElaPushButton *_parkButton{nullptr};
+    ElaPushButton *_setParkPointButton{nullptr};
+    ElaPushButton *_homeButton{nullptr};
 };
 
 #endif  // T_TELESCOPEPAGE_H

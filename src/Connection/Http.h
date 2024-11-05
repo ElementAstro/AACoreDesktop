@@ -9,7 +9,11 @@
 #include <QTimer>
 #include <QUrlQuery>
 #include <QtNetwork/QNetworkAccessManager>
+#include <QtNetwork/QNetworkReply>
 #include <functional>
+#include <QMutex>
+#include <QSemaphore>
+#include <QCache>
 
 class HttpRequest;
 
@@ -43,13 +47,31 @@ public:
     void setResponseInterceptor(
         std::function<void(QNetworkReply *)> interceptor);
 
+    // Authentication
+    void setBasicAuth(const QString &username, const QString &password);
+    void setOAuthToken(const QString &token);
+
+    // Caching
+    void enableCaching(bool enable);
+    void setCacheDuration(int seconds);
+
+    // Concurrency control
+    void setMaxConcurrentRequests(int max);
+
+    // Logging
+    void enableLogging(bool enable);
+    void setLogFunction(std::function<void(const QString &)> logFunc);
+
 signals:
     void requestFinished(HttpRequest *request, int statusCode,
                          const QByteArray &response);
     void requestError(HttpRequest *request, const QString &errorString);
+    void requestProgress(HttpRequest *request, qint64 bytesSent, qint64 bytesTotal);
+    void downloadProgress(HttpRequest *request, qint64 bytesReceived, qint64 bytesTotal);
 
 private slots:
     void onRequestFinished(QNetworkReply *reply);
+    void onReadyRead();
 
 private:
     QNetworkAccessManager *m_networkManager;
@@ -63,9 +85,30 @@ private:
     QQueue<HttpRequest *> m_normalPriorityQueue;
     QQueue<HttpRequest *> m_lowPriorityQueue;
 
+    // Authentication
+    QString m_basicAuthHeader;
+    QString m_oauthToken;
+
+    // Caching
+    bool m_cachingEnabled;
+    int m_cacheDuration;
+    QCache<QString, QByteArray> m_cache;
+
+    // Concurrency control
+    QSemaphore *m_semaphore;
+    int m_maxConcurrentRequests;
+
+    // Logging
+    bool m_loggingEnabled;
+    std::function<void(const QString &)> m_logFunction;
+
+    QMutex m_mutex;
+
     void setDefaultHeaders(QNetworkRequest &request);
     void processNextRequest();
     void enqueueRequest(HttpRequest *request);
+    QString generateCacheKey(const QString &url, const QString &method, const QByteArray &data);
+    void log(const QString &message);
 };
 
 class HttpRequest : public QObject {
@@ -81,6 +124,7 @@ public:
     void setRetryCount(int count);
     void setTimeout(int msecs);
     void setPriority(Priority priority);
+    void cancel();
 
     QString url() const { return m_url; }
     QString method() const { return m_method; }
@@ -95,6 +139,9 @@ private:
     int m_retryCount;
     int m_timeout;
     Priority m_priority;
+
+    QNetworkReply *m_reply;
+    bool m_cancelled;
 
     friend class HttpRequestCenter;
 };

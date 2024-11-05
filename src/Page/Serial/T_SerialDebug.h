@@ -54,6 +54,7 @@ private:
     ElaPushButton *refreshSerialButton;
     ElaCheckBox *autoReconnectCheckBox;
     ElaCheckBox *newlineCheckBox;
+    ElaCheckBox *timestampCheckBox;
 
     ElaComboBox *serialPortComboBox;
     ElaComboBox *baudRateComboBox;
@@ -67,6 +68,7 @@ private:
 
     ElaText *rxLabel;
     ElaText *txLabel;
+    ElaText *statusLabel;
 };
 
 #endif  // T_SERIALDEBUGPAGE_H
