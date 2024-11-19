@@ -13,7 +13,7 @@ class InfoWidget : public QWidget {
 
 public:
     explicit InfoWidget(QWidget *parent = nullptr);
-    ~InfoWidget();
+    ~InfoWidget() override;
 
     // Setters
     void setName(const QString &name);

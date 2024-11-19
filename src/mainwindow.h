@@ -18,6 +18,8 @@ class T_ImageViewerPage;
 
 class T_LogPanelPage;
 
+class T_DataHistory;
+
 class T_Setting;
 class T_I18NPage;
 
@@ -45,6 +47,7 @@ private:
     T_SerialDebugPage *_serialDebugPage{nullptr};
     T_LogPanelPage *_logPanelPage{nullptr};
     T_Setting *_settingPage{nullptr};
+    T_DataHistory *_dataHistoryPage{nullptr};
 
     QTranslator translator;
     T_I18NPage *i18nManager;  // I18nManager 组件实例

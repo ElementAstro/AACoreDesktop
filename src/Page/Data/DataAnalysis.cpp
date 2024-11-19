@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <algorithm>
 #include <cmath>
+#include <numeric> // 添加此行以包含 std::accumulate 和 std::inner_product 的声明
 
 namespace DataAnalysis {
 
@@ -130,8 +131,7 @@ auto DataAnalyzer::validateData(const QVector<TemperatureData>& data) -> bool {
     return true;
 }
 
-auto DataAnalyzer::removeOutliers(const QVector<double>& values)
-    -> QVector<double> {
+auto DataAnalyzer::removeOutliers(const QVector<double>& values) -> QVector<double> {
     qCDebug(m_logger) << "Removing outliers from" << values.size() << "values";
     QVector<double> result = values;
 
@@ -171,6 +171,67 @@ auto DataAnalyzer::analyzeTrend(const QVector<double>& values) -> QString {
         return "Stable";
     }
     return lastQuarter > firstQuarter ? "Increasing" : "Decreasing";
+}
+
+double DataAnalyzer::calculateSkewness(const QVector<double>& values, double mean, double stdDev) {
+    qCDebug(m_logger) << "Calculating skewness";
+    double skewness = 0.0;
+    for (const auto& value : values) {
+        skewness += std::pow((value - mean) / stdDev, 3);
+    }
+    skewness /= values.size();
+    qCDebug(m_logger) << "Calculated skewness:" << skewness;
+    return skewness;
+}
+
+double DataAnalyzer::calculateKurtosis(const QVector<double>& values, double mean, double stdDev) {
+    qCDebug(m_logger) << "Calculating kurtosis";
+    double kurtosis = 0.0;
+    for (const auto& value : values) {
+        kurtosis += std::pow((value - mean) / stdDev, 4);
+    }
+    kurtosis = kurtosis / values.size() - 3.0;
+    qCDebug(m_logger) << "Calculated kurtosis:" << kurtosis;
+    return kurtosis;
+}
+
+void DataAnalyzer::calculateLinearRegression(const QVector<double>& values, double& slope, double& rSquared) {
+    qCDebug(m_logger) << "Calculating linear regression";
+    int n = values.size();
+    double sumX = 0.0;
+    double sumY = 0.0;
+    double sumXY = 0.0;
+    double sumX2 = 0.0;
+    double sumY2 = 0.0;
+
+    for (int i = 0; i < n; ++i) {
+        sumX += i;
+        sumY += values[i];
+        sumXY += i * values[i];
+        sumX2 += i * i;
+        sumY2 += values[i] * values[i];
+    }
+
+    double denominator = n * sumX2 - sumX * sumX;
+    if (denominator == 0) {
+        slope = 0;
+        rSquared = 0;
+        qCWarning(m_logger) << "Linear regression calculation failed due to zero denominator";
+        return;
+    }
+
+    slope = (n * sumXY - sumX * sumY) / denominator;
+    double intercept = (sumY - slope * sumX) / n;
+
+    double ssTotal = sumY2 - (sumY * sumY) / n;
+    double ssResidual = 0.0;
+    for (int i = 0; i < n; ++i) {
+        double predictedY = slope * i + intercept;
+        ssResidual += std::pow(values[i] - predictedY, 2);
+    }
+
+    rSquared = 1 - (ssResidual / ssTotal);
+    qCDebug(m_logger) << "Calculated linear regression: slope =" << slope << ", rSquared =" << rSquared;
 }
 
 }  // namespace DataAnalysis

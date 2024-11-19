@@ -2,14 +2,16 @@
 #define SETTINGSDIALOG_H
 
 #include <QColorDialog>
-#include <QDateTimeEdit>
 #include <QLabel>
 #include <QLoggingCategory>
 #include <QPushButton>
 #include <QSpinBox>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <QDate>
+#include <QDialog>
 
+#include "ElaCalendar.h"
 
 class ElaSpinBox;
 class ElaPushButton;
@@ -25,17 +27,39 @@ public:
 private slots:
     void onColorButtonClicked();
     void onApplyButtonClicked();
+    void onStartDateButtonClicked();
+    void onEndDateButtonClicked();
+    void onStartDateSelected(const QDate& date);
+    void onEndDateSelected(const QDate& date);
 
 private:
-    QDateTimeEdit* m_startTimeEdit;
-    QDateTimeEdit* m_endTimeEdit;
+    QDate m_startDate;
+    QDate m_endDate;
     QSpinBox* m_lowerThresholdSpin;
     QSpinBox* m_upperThresholdSpin;
     QPushButton* m_colorButton;
     QPushButton* m_applyButton;
+    QPushButton* m_startDateButton;
+    QPushButton* m_endDateButton;
 
     void initializeUI();
     void connectSignals();
+};
+
+class DateDialog : public QDialog {
+    Q_OBJECT
+
+public:
+    explicit DateDialog(QWidget* parent = nullptr);
+
+    QDate selectedDate() const;
+
+private slots:
+    void onDateSelected();
+
+private:
+    ElaCalendar* m_calendar;
+    QDate m_selectedDate;
 };
 
 #endif  // SETTINGSDIALOG_H

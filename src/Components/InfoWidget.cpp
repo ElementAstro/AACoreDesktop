@@ -36,6 +36,14 @@ InfoWidget::InfoWidget(QWidget *parent)
     setMinimumSize(300, 180);
 }
 
+InfoWidget::~InfoWidget() {
+    delete m_valueLabel;
+    delete m_unitLabel;
+    delete m_nameLabel;
+    delete m_rangeLabel;
+    delete m_valueAnimation;
+}
+
 void InfoWidget::setupUI() {
     auto *mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(20, 20, 20, 20);
@@ -92,4 +100,21 @@ void InfoWidget::refreshDisplay() {
     }
 
     m_valueLabel->setStyleSheet(QString("color: %1").arg(textColor.name()));
+}
+
+
+auto InfoWidget::getCurrentValue() const -> double {
+    return m_currentValue;
+}
+
+auto InfoWidget::setCurrentValue(double value) -> void {
+    m_currentValue = value;
+    refreshDisplay();
+}
+
+auto InfoWidget::setFontSizes(int nameSize, int valueSize, int unitSize, int rangeSize) -> void {
+    m_nameLabel->setTextPixelSize(nameSize);
+    m_valueLabel->setTextPixelSize(valueSize);
+    m_unitLabel->setTextPixelSize(unitSize);
+    m_rangeLabel->setTextPixelSize(rangeSize);
 }

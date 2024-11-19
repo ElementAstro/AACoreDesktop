@@ -33,6 +33,8 @@
 
 #include "Page/T_Setting.h"
 
+#include "Page/Data/T_DataHistory.h"
+
 namespace {
 const int WindowWidth = 1200;
 const int WindowHeight = 740;
@@ -117,6 +119,8 @@ void MainWindow::initContent() {
 
     _settingPage = new T_Setting(this);
 
+    _dataHistoryPage = new T_DataHistory(this);
+
     // GraphicsView
     auto *scene = new ElaGraphicsScene(this);
     scene->setSceneRect(0, 0, SceneRectSize, SceneRectSize);
@@ -146,6 +150,10 @@ void MainWindow::initContent() {
 
     addPageNode("Log", _logPanelPage, ElaIconType::List);
 
+    QString dataKey;
+    addExpanderNode("Data", dataKey, ElaIconType::Database);
+    addPageNode("DataHistory", _dataHistoryPage, dataKey,
+                ElaIconType::ChartBar);
     addFooterNode("About", nullptr, _aboutKey, 0, ElaIconType::User);
     auto *aboutPage = new T_About();
     aboutPage->hide();
