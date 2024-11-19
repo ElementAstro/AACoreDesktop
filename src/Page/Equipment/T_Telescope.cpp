@@ -68,14 +68,15 @@ T_TelescopePage::T_TelescopePage(QWidget *parent) : T_BasePage(parent) {
     mainLayout->addWidget(tabWidget);
 
     // 跟踪状态更新定时器
-    _trackingTimer = new QTimer(this);
-    connect(_trackingTimer, &QTimer::timeout, this, &T_TelescopePage::updateTrackingStatus);
-    _trackingTimer->start(1000); // 每秒更新一次
+    //_trackingTimer = new QTimer(this);
+    //connect(_trackingTimer, &QTimer::timeout, this, &T_TelescopePage::updateTrackingStatus);
+    //_trackingTimer->start(1000); // 每秒更新一次
 
     QWidget *centralWidget = new QWidget(this);
     centralWidget->setWindowTitle("望远镜");
     QVBoxLayout *centerLayout = new QVBoxLayout(centralWidget);
     centerLayout->addLayout(mainLayout);
+    centerLayout->addStretch();
     centerLayout->setContentsMargins(0, 0, 0, 0);
     addCentralWidget(centralWidget, true, true, 0);
 }

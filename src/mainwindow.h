@@ -15,6 +15,8 @@ class T_TelescopePage;
 class T_FocuserPage;
 class T_FilterWheelPage;
 class T_GuiderPage;
+class T_SwitchPage;
+
 class T_ConfigPanel;
 
 class T_SimpleSequencerPage;
@@ -70,6 +72,7 @@ private:
     T_FocuserPage *_focuserPage{nullptr};
     T_FilterWheelPage *_filterWheelPage{nullptr};
     T_GuiderPage *_guiderPage{nullptr};
+    T_SwitchPage *_switchPage{nullptr};
     T_SimpleSequencerPage *_simpleSequencerPage{nullptr};
     T_TargetSearchPage *_targetSearchPage{nullptr};
     T_ConfigPanel *_configPanel{nullptr};

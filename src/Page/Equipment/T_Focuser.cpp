@@ -62,10 +62,10 @@ T_FocuserPage::T_FocuserPage(QWidget *parent) : T_BasePage(parent) {
     mainLayout->addWidget(tabWidget);
 
     // 状态更新定时器
-    _statusTimer = new QTimer(this);
-    connect(_statusTimer, &QTimer::timeout, this,
-            &T_FocuserPage::updateFocuserStatus);
-    _statusTimer->start(kTimerInterval);  // 每秒更新一次
+    //_statusTimer = new QTimer(this);
+    //connect(_statusTimer, &QTimer::timeout, this,
+    //        &T_FocuserPage::updateFocuserStatus);
+    //_statusTimer->start(kTimerInterval);  // 每秒更新一次
 
     auto *centralWidget = new QWidget(this);
     centralWidget->setWindowTitle("调焦器");

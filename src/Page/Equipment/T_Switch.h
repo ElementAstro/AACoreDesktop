@@ -1,42 +1,92 @@
-#ifndef WEATHERCONTROLPANEL_H
-#define WEATHERCONTROLPANEL_H
+#ifndef T_SWITCHPAGE_H
+#define T_SWITCHPAGE_H
 
+#include <QTimer>
+#include <QWidget>
+#include <QHBoxLayout>
+
+#include "Components/C_InfoCard.h"
+#include "T_SwitchConfig.h"
 #include "T_BasePage.h"
 
-class ElaText;
 class ElaPushButton;
 class ElaSlider;
+class ElaText;
+class ElaTabWidget;
+class C_INDIPanel;
+class ElaIconButton;
+class ElaToggleSwitch;
+class QGroupBox;
 
-class WeatherControlPanel : public QWidget {
+class T_SwitchPage : public T_BasePage {
     Q_OBJECT
 
 public:
-    explicit WeatherControlPanel(QWidget *parent = nullptr);
+    explicit T_SwitchPage(QWidget *parent = nullptr);
+    ~T_SwitchPage();
 
 signals:
-    // 回调点：电源开关状态变化
     void power1Changed(bool state);
     void power2Changed(bool state);
-    // 回调点：LightBox和Flat Panel值变化
     void lightBoxValueChanged(int value);
     void flatPanelValueChanged(int value);
 
+private slots:
+    void onSettingsButtonClicked();
+    void onPowerButtonClicked();
+    void onRefreshButtonClicked();
+    void updateStatus();
+    void onLightboxSliderChanged(int value);
+    void onFlatPanelSliderChanged(int value);
+
 private:
-    // 私有方法：创建布局
     void createLayout();
+    QHBoxLayout* createTopLayout();
+    QWidget* createInfoTab();
+    QWidget* createControlTab();
+    QWidget* createSettingsTab();
+    QWidget* createChartTab();
+    QGroupBox* createInfoGroup(const QString &title);
+    void addSliderControl(QVBoxLayout *layout, const QString &label, 
+                         ElaSlider *&slider, int min, int max, int default_value);
 
-    // UI 控件
-    ElaText *scopeLabel;
-    ElaText *temperatureLabel;
-    ElaText *rainLabel;
-    ElaText *cloudLabel;
-    ElaText *humidityLabel;
-
+    ElaTabWidget *tabWidget;
+    
+    // Power controls
     ElaPushButton *power1Button;
     ElaPushButton *power2Button;
-
+    
+    // Sliders
     ElaSlider *lightboxSlider;
     ElaSlider *flatPanelSlider;
+
+    // Top toolbar buttons
+    ElaPushButton *settingsButton;
+    ElaIconButton *_powerButton;
+    ElaIconButton *_refreshButton;
+
+    // Toggle switches
+    ElaToggleSwitch *lightboxSwitch;
+    ElaToggleSwitch *flatPanelSwitch;
+
+    // Info cards
+    InfoCard *deviceCard;
+    InfoCard *statusCard;
+    InfoCard *lightboxCard;
+    InfoCard *flatPanelCard;
+    InfoCard *power1Card;
+    InfoCard *power2Card;
+
+    // Timers
+    QTimer *updateTimer;
+
+    // Config dialog
+    T_SwitchConfig *serialConfigDialog;
+
+    // Status tracking
+    bool isPowered;
+    bool isLightboxOn;
+    bool isFlatPanelOn;
 };
 
-#endif  // WEATHERCONTROLPANEL_H
+#endif  // T_SWITCHPAGE_H

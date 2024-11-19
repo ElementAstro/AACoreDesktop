@@ -59,10 +59,10 @@ T_FilterWheelPage::T_FilterWheelPage(QWidget *parent) : T_BasePage(parent) {
     mainLayout->addWidget(tabWidget);
 
     // 状态更新定时器
-    _statusTimer = new QTimer(this);
-    connect(_statusTimer, &QTimer::timeout, this,
-            &T_FilterWheelPage::updateFilterStatus);
-    _statusTimer->start(kTimerInterval);  // 每秒更新一次
+    //_statusTimer = new QTimer(this);
+    //connect(_statusTimer, &QTimer::timeout, this,
+   //         &T_FilterWheelPage::updateFilterStatus);
+   // _statusTimer->start(kTimerInterval);  // 每秒更新一次
 
     auto *centralWidget = new QWidget(this);
     centralWidget->setWindowTitle("滤镜轮");

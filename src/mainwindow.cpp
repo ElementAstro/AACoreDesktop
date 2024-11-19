@@ -140,6 +140,8 @@ void MainWindow::initContent() {
     _focuserPage = new T_FocuserPage(this);
     _filterWheelPage = new T_FilterWheelPage(this);
     _guiderPage = new T_GuiderPage(this);
+    _switchPage = new T_SwitchPage(this);
+
     _simpleSequencerPage = new T_SimpleSequencerPage(this);
     _targetSearchPage = new T_TargetSearchPage(this);
     _configPanel = new T_ConfigPanel(this);
@@ -187,6 +189,7 @@ void MainWindow::initContent() {
     addPageNode("Focuser", _focuserPage, testKey2, ElaIconType::BracketsCurly);
     addPageNode("FilterWheel", _filterWheelPage, testKey2, ElaIconType::Filter);
     addPageNode("Guider", _guiderPage, testKey2, 0, ElaIconType::MapLocation);
+    addPageNode("Switch", _switchPage, testKey2, ElaIconType::Cloud);
 
     QString sequencerKey;
     addExpanderNode("Sequencer", sequencerKey, ElaIconType::BallotCheck);
