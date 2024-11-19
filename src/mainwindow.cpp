@@ -3,6 +3,7 @@
 
 #include <QDebug>
 #include <QGraphicsView>
+#include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QSettings>
 #include <QStackedWidget>
@@ -18,39 +19,12 @@
 #include "ElaStatusBar.h"
 #include "ElaText.h"
 
-#include "Page/Config/T_ConfigPanel.h"
-
-#include "Page/Debug/T_HttpClient.h"
-#include "Page/Debug/T_TcpClient.h"
-#include "Page/Debug/T_WebSocketClient.h"
-
-#include "Page/Equipment/T_Camera.h"
-#include "Page/Equipment/T_DeviceConnection.h"
-#include "Page/Equipment/T_FilterWheel.h"
-#include "Page/Equipment/T_Focuser.h"
-#include "Page/Equipment/T_Guider.h"
 #include "Page/Equipment/T_Switch.h"
-#include "Page/Equipment/T_Telescope.h"
-
-#include "Page/Helper/HelpWindow.h"
-
-#include "Page/Image/T_ImageViewer.h"
 
 #include "Page/Log/T_LogPanel.h"
 
-#include "Plugin/PluginManagerPage.h"
-
-#include "Page/Sequencer/T_SimpleSequencer.h"
-
 #include "Page/Serial/T_SerialConfig.h"
 #include "Page/Serial/T_SerialDebug.h"
-
-#include "Page/Skymap/T_TargetSearch.h"
-
-#include "Page/System/T_Process.hpp"
-#include "Page/System/T_Software.hpp"
-#include "Page/System/T_SystemInfo.h"
-#include "Page/System/T_Terminal.h"
 
 #include "Page/Utils/T_About.h"
 #include "Page/Utils/T_I18n.h"
@@ -125,8 +99,8 @@ void MainWindow::initWindow() {
 
 void MainWindow::initEdgeLayout() {
     // 状态栏
-    auto statusBar = new ElaStatusBar(this);
-    auto statusText = new ElaText("初始化成功！", this);
+    auto *statusBar = new ElaStatusBar(this);
+    auto *statusText = new ElaText("初始化成功！", this);
     statusText->setTextPixelSize(StatusTextPixelSize);
     statusBar->addWidget(statusText);
     this->setStatusBar(statusBar);
@@ -134,102 +108,43 @@ void MainWindow::initEdgeLayout() {
 
 void MainWindow::initContent() {
     _homePage = new T_Home(this);
-    _deviceConnectionPage = new T_DeviceConnection(this);
-    _cameraPage = new T_CameraPage(this);
-    _telescopePage = new T_TelescopePage(this);
-    _focuserPage = new T_FocuserPage(this);
-    _filterWheelPage = new T_FilterWheelPage(this);
-    _guiderPage = new T_GuiderPage(this);
     _switchPage = new T_SwitchPage(this);
 
-    _simpleSequencerPage = new T_SimpleSequencerPage(this);
-    _targetSearchPage = new T_TargetSearchPage(this);
-    _configPanel = new T_ConfigPanel(this);
     _serialConfigPage = new T_SerialConfig(this);
     _serialDebugPage = new T_SerialDebugPage(this);
-    _softwarePage = new T_SoftwarePage(this);
-    _processPage = new T_ProcessPage(this);
-    _systemInfoPage = new T_SystemInfoPage(this);
+
     _logPanelPage = new T_LogPanelPage(this);
+
     _settingPage = new T_Setting(this);
-    _terminalPage = new T_TerminalPage(this);
-    _imageViewerPage = new T_ImageViewerPage(this);
-    _httpClientPage = new T_HttpClientPage(this);
-    _webSocketClientPage = new T_WebSocketClientPage(this);
-    _tcpClientPage = new T_TcpClientPage(this);
-    _pluginManagerPage = new PluginManagerPage(this);
-    _helpWindow = new HelpWindow(this);
 
     // GraphicsView
-    auto scene = new ElaGraphicsScene(this);
+    auto *scene = new ElaGraphicsScene(this);
     scene->setSceneRect(0, 0, SceneRectSize, SceneRectSize);
-    auto item1 = new ElaGraphicsItem();
+    auto *item1 = new ElaGraphicsItem();
     item1->setWidth(ItemSize);
     item1->setHeight(ItemSize);
     item1->setMaxLinkPortCount(ItemSize);
     item1->setMaxLinkPortCount(1);
-    auto item2 = new ElaGraphicsItem();
+    auto *item2 = new ElaGraphicsItem();
     item2->setWidth(ItemSize);
     item2->setHeight(ItemSize);
     scene->addItem(item1);
     scene->addItem(item2);
-    auto view = new ElaGraphicsView(scene);
+    auto *view = new ElaGraphicsView(scene);
     view->setScene(scene);
 
     QString testKey2;
     QString testKey1;
     addPageNode("HOME", _homePage, ElaIconType::House);
-    addPageNode("DeviceConnection", _deviceConnectionPage,
-                ElaIconType::HardDrive);
 
     addExpanderNode("DeviceControl", testKey2, ElaIconType::ScrewdriverWrench);
     QString cameraKey;
-    addPageNode("Camera", _cameraPage, testKey2, ElaIconType::Camera);
-    addPageNode("Telescope", _telescopePage, testKey2, ElaIconType::Telescope);
-    addPageNode("Focuser", _focuserPage, testKey2, ElaIconType::BracketsCurly);
-    addPageNode("FilterWheel", _filterWheelPage, testKey2, ElaIconType::Filter);
-    addPageNode("Guider", _guiderPage, testKey2, 0, ElaIconType::MapLocation);
     addPageNode("Switch", _switchPage, testKey2, ElaIconType::Cloud);
-
-    QString sequencerKey;
-    addExpanderNode("Sequencer", sequencerKey, ElaIconType::BallotCheck);
-    addPageNode("Sequencer", _simpleSequencerPage, sequencerKey,
-                ElaIconType::BlockQuote);
-
-    QString pluginKey;
-    addExpanderNode("Plugin", pluginKey, ElaIconType::Plug);
-    addPageNode("Plugin", _pluginManagerPage, pluginKey, ElaIconType::Plug);
-
-    addPageNode("TargetSearch", _targetSearchPage,
-                ElaIconType::MagnifyingGlassPlus);
 
     addPageNode("SerialConfig", _serialConfigPage, ElaIconType::GearComplex);
     addPageNode("SerialDebug", _serialDebugPage, ElaIconType::Plug);
 
-    addPageNode("ImageViewer", _imageViewerPage, ElaIconType::Image);
-
-    QString systemKey;
-    addExpanderNode("System", systemKey, ElaIconType::SolarSystem);
-    addPageNode("Software", _softwarePage, systemKey, ElaIconType::Grid2);
-    addPageNode("Process", _processPage, systemKey, ElaIconType::BarsProgress);
-    addPageNode("SystemInfo", _systemInfoPage, systemKey, ElaIconType::List);
-    addPageNode("Terminal", _terminalPage, systemKey, ElaIconType::Terminal);
-
-    addPageNode("Config", _configPanel, ElaIconType::GearComplex);
-
     addPageNode("Log", _logPanelPage, ElaIconType::List);
-
-    QString debugKey;
-    addExpanderNode("Debug", debugKey, ElaIconType::Bug);
-    addPageNode("HttpClient", _httpClientPage, debugKey,
-                ElaIconType::NetworkWired);
-    addPageNode("TcpClient", _tcpClientPage, debugKey, ElaIconType::Plug);
-    addPageNode("WebSocketClient", _webSocketClientPage, debugKey,
-                ElaIconType::Cloud);
-
-    QString helpKey;
-    addExpanderNode("Help", helpKey, ElaIconType::Question);
-    addPageNode("Help", _helpWindow, helpKey, ElaIconType::Book);
 
     addFooterNode("About", nullptr, _aboutKey, 0, ElaIconType::User);
     auto *aboutPage = new T_About();
@@ -268,6 +183,6 @@ void MainWindow::changeLanguage(const QString &languageCode) {
     }
 
     // 保存用户选择到 QSettings
-    QSettings settings("MyCompany", "MyApp");
+    QSettings settings("AACore", "MyApp");
     settings.setValue("language", languageCode);
 }
